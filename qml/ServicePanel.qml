@@ -59,6 +59,15 @@ Rectangle {
                         Text { text: title; color: T.text; font.pixelSize: 15; elide: Text.ElideRight; Layout.fillWidth: true }
                         Text { visible: subtitle !== ""; text: subtitle; color: T.muted; font.pixelSize: 13; elide: Text.ElideRight; Layout.fillWidth: true }
                     }
+                    Text {   // this part has its own template; the name is shown as a tooltip
+                        id: tplIcon
+                        visible: templateId !== "" && presenter.templates.contains(templateId)
+                        text: "▣"; color: T.accent; font.pixelSize: 16
+                        HoverHandler { id: tplHover }
+                        ToolTip.visible: tplHover.hovered
+                        ToolTip.delay: 300
+                        ToolTip.text: "Template: " + (presenter.templates.all, presenter.templates.get(templateId).name)
+                    }
                     AppButton { text: "⋮"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
                         onClicked: { itemMenu.idx = index; itemMenu.popup() } }
                 }
@@ -81,7 +90,26 @@ Rectangle {
     Menu {
         id: itemMenu
         property int idx: -1
+        property string curTemplate: ""
+        onAboutToShow: curTemplate = presenter.itemTemplate(idx)
         MenuItem { text: "Bewerken…"; onTriggered: root.openEditor(itemMenu.idx) }
+        Menu {
+            title: "Template"
+            MenuItem {
+                text: "Standaard (actief template)"
+                checkable: true; checked: itemMenu.curTemplate === "" || !presenter.templates.contains(itemMenu.curTemplate)
+                onTriggered: presenter.setItemTemplate(itemMenu.idx, "")
+            }
+            MenuSeparator {}
+            Repeater {
+                model: presenter.templates.all
+                MenuItem {
+                    text: modelData.name
+                    checkable: true; checked: itemMenu.curTemplate === modelData.id
+                    onTriggered: presenter.setItemTemplate(itemMenu.idx, modelData.id)
+                }
+            }
+        }
         MenuItem { text: "Omhoog"; enabled: itemMenu.idx > 0; onTriggered: presenter.moveItem(itemMenu.idx, -1) }
         MenuItem { text: "Omlaag"; enabled: itemMenu.idx < presenter.service.rowCount() - 1; onTriggered: presenter.moveItem(itemMenu.idx, 1) }
         MenuItem { text: "Verwijderen"; onTriggered: presenter.removeItem(itemMenu.idx) }

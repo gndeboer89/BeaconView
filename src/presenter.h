@@ -27,6 +27,8 @@ class Presenter : public QObject {
     Q_PROPERTY(QString liveText READ liveText NOTIFY liveChanged)
     Q_PROPERTY(QString liveBackground READ liveBackground NOTIFY liveChanged)
     Q_PROPERTY(QString liveReference READ liveReference NOTIFY liveChanged)
+    Q_PROPERTY(QVariantMap liveTemplate READ liveTemplate NOTIFY liveChanged)
+    Q_PROPERTY(QVariantMap nextTemplate READ nextTemplate NOTIFY liveChanged)
     Q_PROPERTY(QString nextText READ nextText NOTIFY liveChanged)
     Q_PROPERTY(QString nextReference READ nextReference NOTIFY liveChanged)
     Q_PROPERTY(QString nextBackground READ nextBackground NOTIFY liveChanged)
@@ -54,6 +56,8 @@ public:
     QString liveText() const;
     QString liveBackground() const;
     QString liveReference() const;
+    QVariantMap liveTemplate() const;
+    QVariantMap nextTemplate() const;
     QString nextText() const;
     QString nextReference() const;
     QString nextBackground() const;
@@ -83,6 +87,8 @@ public:
     Q_INVOKABLE void removeItem(int i);
     Q_INVOKABLE void moveItem(int i, int delta);
     Q_INVOKABLE void setItemBackground(int i, const QString &bg);
+    Q_INVOKABLE void setItemTemplate(int i, const QString &templateId);  // "" = use the active template
+    Q_INVOKABLE QString itemTemplate(int i) const;
     Q_INVOKABLE void importMedia(const QUrl &file);
     Q_INVOKABLE void save();
 
@@ -104,6 +110,7 @@ private:
     void onModelChanged();
     QString slideAt(int item, int slide) const;
     QString refAt(int item, int slide) const;
+    QVariantMap templateFor(int item) const;
     QString backgroundOf(int item) const;
     QString dataDir() const;
 

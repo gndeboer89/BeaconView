@@ -47,6 +47,12 @@ private slots:
         QCOMPARE(lib.all().size(), before);
         QCOMPARE(lib.activeId(), QStringLiteral("builtin:classic")); // falls back when active one is removed
     }
+    void contains() {
+        TemplateLibrary lib;
+        QVERIFY(lib.contains("builtin:modern"));
+        QVERIFY(!lib.contains("custom:gone"));
+        QVERIFY(!lib.contains(""));
+    }
     void unknownIdFallsBack() {
         TemplateLibrary lib;
         QCOMPARE(lib.get("nope")["id"].toString(), QStringLiteral("builtin:classic"));

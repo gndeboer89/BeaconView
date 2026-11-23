@@ -87,6 +87,12 @@ QVariantList TemplateLibrary::all() const {
     return l;
 }
 
+bool TemplateLibrary::contains(const QString &id) const {
+    for (const auto &m : m_builtin) if (m["id"].toString() == id) return true;
+    for (const auto &m : m_custom) if (m["id"].toString() == id) return true;
+    return false;
+}
+
 QVariantMap TemplateLibrary::get(const QString &id) const {
     for (const auto &m : m_builtin) if (m["id"].toString() == id) return m;
     for (const auto &m : m_custom) if (m["id"].toString() == id) return m;

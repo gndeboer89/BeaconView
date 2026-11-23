@@ -10,13 +10,14 @@ struct ServiceItem {
     QString background;  // "g:<id>" (gradient) or file URL; empty = default
     QStringList slides;
     QStringList refs;    // optional per-slide reference (e.g. "Psalm 23:1-2"), parallel to slides
+    QString templateId;  // own template for this part; empty = use the active template
 };
 
 // Ordered list of parts ("onderdelen") that make up a church service.
 class ServiceModel : public QAbstractListModel {
     Q_OBJECT
 public:
-    enum Roles { KindRole = Qt::UserRole + 1, TitleRole, SubtitleRole, SlideCountRole, BackgroundRole };
+    enum Roles { KindRole = Qt::UserRole + 1, TitleRole, SubtitleRole, SlideCountRole, BackgroundRole, TemplateRole };
 
     explicit ServiceModel(QObject *parent = nullptr) : QAbstractListModel(parent) {}
 
@@ -32,6 +33,7 @@ public:
     void remove(int i);
     bool move(int from, int to);
     void setBackground(int i, const QString &bg);
+    void setTemplate(int i, const QString &id);
 
     QJsonArray toJson() const;
     void fromJson(const QJsonArray &arr);

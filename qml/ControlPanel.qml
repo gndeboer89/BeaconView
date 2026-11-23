@@ -18,7 +18,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.preferredHeight: col.width * 9 / 16
             color: "transparent"; border.color: T.accent; border.width: 2; radius: 6
-            SlideView { anchors.fill: parent; anchors.margins: 3; text: presenter.liveText; reference: presenter.liveReference; background: presenter.liveBackground }
+            SlideView { anchors.fill: parent; anchors.margins: 3; tpl: presenter.liveTemplate; text: presenter.liveText; reference: presenter.liveReference; background: presenter.liveBackground }
         }
 
         RowLayout {
@@ -31,7 +31,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.preferredHeight: col.width * 9 / 16
             color: "transparent"; border.color: T.border; radius: 6
-            SlideView { anchors.fill: parent; anchors.margins: 3; text: presenter.nextText; reference: presenter.nextReference; background: presenter.nextBackground }
+            SlideView { anchors.fill: parent; anchors.margins: 3; tpl: presenter.nextTemplate; text: presenter.nextText; reference: presenter.nextReference; background: presenter.nextBackground }
         }
 
         Item { Layout.fillHeight: true }

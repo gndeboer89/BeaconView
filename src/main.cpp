@@ -35,6 +35,9 @@ int main(int argc, char *argv[]) {
         auto *o = presenter.overlays();
         o->setTimerDuration(300); o->setTimerShown(true); o->start(); o->setClockShown(true); o->toggleMessage(1);
     }
+    // Developer aid: `--item-template 1=builtin:modern` gives part 1 its own template, `--select 1` goes live on it.
+    if (const QString spec = cliValue("--item-template"); spec.contains('=')) presenter.setItemTemplate(spec.section('=', 0, 0).toInt(), spec.section('=', 1));
+    if (const QString sel = cliValue("--select"); !sel.isEmpty()) presenter.selectItem(sel.toInt());
     // Developer aid: `--logo file.png [--watermark]` sets the church logo.
     if (const QString f = cliValue("--logo"); !f.isEmpty()) {
         presenter.branding()->chooseLogo(QUrl::fromLocalFile(f));

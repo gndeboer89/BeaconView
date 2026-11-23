@@ -20,6 +20,9 @@ Presenter::Presenter(QObject *parent) : QObject(parent) {
     connect(&m_saveTimer, &QTimer::timeout, this, &Presenter::save);
 
     load();
+    // Template edits / deletions change what is shown right now
+    connect(&m_templates, &TemplateLibrary::changed, this, &Presenter::liveChanged);
+    connect(&m_templates, &TemplateLibrary::activeChanged, this, &Presenter::liveChanged);
     // Keep indices valid and the live view fresh whenever the service changes.
     connect(&m_service, &QAbstractItemModel::dataChanged, this, &Presenter::onModelChanged);
     connect(&m_service, &QAbstractItemModel::rowsInserted, this, &Presenter::onModelChanged);
@@ -50,6 +53,12 @@ QString Presenter::refAt(int item, int slide) const {
     return (it->kind == "scripture") ? it->subtitle : QString();
 }
 
+QVariantMap Presenter::templateFor(int item) const {
+    const ServiceItem *it = m_service.item(item);
+    if (it && !it->templateId.isEmpty() && m_templates.contains(it->templateId)) return m_templates.get(it->templateId);
+    return m_templates.active();   // no own template, or the chosen one was deleted
+}
+
 QString Presenter::backgroundOf(int item) const {
     const ServiceItem *it = m_service.item(item);
     return (it && !it->background.isEmpty()) ? it->background : m_defaultBg;
@@ -73,6 +82,9 @@ QString Presenter::nextReference() const {
     if (m_slide + 1 < slideCount()) return refAt(m_item, m_slide + 1);
     return refAt(m_item + 1, 0);
 }
+
+QVariantMap Presenter::liveTemplate() const { return templateFor(m_item); }
+QVariantMap Presenter::nextTemplate() const { return templateFor(m_slide + 1 < slideCount() ? m_item : m_item + 1); }
 
 QString Presenter::nextBackground() const {
     return backgroundOf(m_slide + 1 < slideCount() ? m_item : m_item + 1);
@@ -196,6 +208,8 @@ QString Presenter::itemText(int i) const {
 void Presenter::removeItem(int i) { m_service.remove(i); }
 void Presenter::moveItem(int i, int delta) { m_service.move(i, i + delta); }
 void Presenter::setItemBackground(int i, const QString &bg) { m_service.setBackground(i, bg); }
+void Presenter::setItemTemplate(int i, const QString &templateId) { m_service.setTemplate(i, templateId); }
+QString Presenter::itemTemplate(int i) const { const ServiceItem *it = m_service.item(i); return it ? it->templateId : QString(); }
 
 void Presenter::importMedia(const QUrl &file) {
     const QString src = file.toLocalFile();

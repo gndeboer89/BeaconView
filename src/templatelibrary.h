@@ -17,6 +17,7 @@ public:
     QString activeId() const { return m_activeId; }
     QVariantMap active() const { return get(m_activeId); }
 
+    Q_INVOKABLE bool contains(const QString &id) const;
     Q_INVOKABLE QVariantMap get(const QString &id) const;      // falls back to the first built-in
     Q_INVOKABLE QString duplicate(const QString &id);          // returns the id of the new custom template
     Q_INVOKABLE void update(const QString &id, const QVariantMap &values);  // custom templates only

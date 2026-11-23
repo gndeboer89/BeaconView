@@ -11,13 +11,14 @@ QVariant ServiceModel::data(const QModelIndex &index, int role) const {
     case SubtitleRole: return it->subtitle;
     case SlideCountRole: return it->slides.size();
     case BackgroundRole: return it->background;
+    case TemplateRole: return it->templateId;
     }
     return {};
 }
 
 QHash<int, QByteArray> ServiceModel::roleNames() const {
     return {{KindRole, "kind"}, {TitleRole, "title"}, {SubtitleRole, "subtitle"},
-            {SlideCountRole, "slideCount"}, {BackgroundRole, "background"}};
+            {SlideCountRole, "slideCount"}, {BackgroundRole, "background"}, {TemplateRole, "templateId"}};
 }
 
 void ServiceModel::append(const ServiceItem &it) {
@@ -53,12 +54,18 @@ void ServiceModel::setBackground(int i, const QString &bg) {
     emit dataChanged(index(i), index(i), {BackgroundRole});
 }
 
+void ServiceModel::setTemplate(int i, const QString &id) {
+    if (!item(i) || m_items[i].templateId == id) return;
+    m_items[i].templateId = id;
+    emit dataChanged(index(i), index(i), {TemplateRole});
+}
+
 QJsonArray ServiceModel::toJson() const {
     QJsonArray arr;
     for (const auto &it : m_items) {
         arr.append(QJsonObject{{"kind", it.kind}, {"title", it.title}, {"subtitle", it.subtitle},
                                {"background", it.background}, {"slides", QJsonArray::fromStringList(it.slides)},
-                               {"refs", QJsonArray::fromStringList(it.refs)}});
+                               {"refs", QJsonArray::fromStringList(it.refs)}, {"template", it.templateId}});
     }
     return arr;
 }
@@ -69,7 +76,7 @@ void ServiceModel::fromJson(const QJsonArray &arr) {
     for (const auto &v : arr) {
         const QJsonObject o = v.toObject();
         ServiceItem it{o["kind"].toString("custom"), o["title"].toString(), o["subtitle"].toString(),
-                       o["background"].toString(), {}, {}};
+                       o["background"].toString(), {}, {}, o["template"].toString()};
         for (const auto &s : o["slides"].toArray()) it.slides << s.toString();
         for (const auto &s : o["refs"].toArray()) it.refs << s.toString();
         m_items.append(it);

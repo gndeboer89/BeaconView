@@ -44,6 +44,7 @@ Window {
 
     SlideView {
         anchors.fill: parent
+        tpl: presenter.liveTemplate
         text: presenter.liveText
         reference: presenter.liveReference
         background: presenter.liveBackground
