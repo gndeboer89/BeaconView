@@ -89,6 +89,7 @@ public:
     Q_INVOKABLE void setItemBackground(int i, const QString &bg);
     Q_INVOKABLE void setItemTemplate(int i, const QString &templateId);  // "" = use the active template
     Q_INVOKABLE QString itemTemplate(int i) const;
+    Q_INVOKABLE QString defaultTemplateName(int i) const;   // what the part uses when it has no template of its own
     Q_INVOKABLE void importMedia(const QUrl &file);
     Q_INVOKABLE void save();
 

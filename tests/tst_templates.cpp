@@ -53,6 +53,35 @@ private slots:
         QVERIFY(!lib.contains("custom:gone"));
         QVERIFY(!lib.contains(""));
     }
+    void kindDefaults() {
+        QSettings().remove("kindTemplates");
+        TemplateLibrary lib;
+        QCOMPARE(lib.kindTemplate("song"), QString());
+        QSignalSpy spy(&lib, &TemplateLibrary::kindDefaultsChanged);
+        lib.setKindTemplate("song", "builtin:modern");
+        QCOMPARE(spy.count(), 1);
+        QCOMPARE(lib.kindTemplate("song"), QStringLiteral("builtin:modern"));
+        QCOMPARE(lib.kindTemplate("prayer"), QString());
+        lib.setKindTemplate("song", "builtin:modern");              // unchanged: no signal
+        QCOMPARE(spy.count(), 1);
+        lib.setKindTemplate("song", "does-not-exist");              // unknown id clears the default
+        QCOMPARE(lib.kindTemplate("song"), QString());
+        lib.setKindTemplate("song", "builtin:caps");
+
+        TemplateLibrary again;                                       // persisted
+        QCOMPARE(again.kindTemplate("song"), QStringLiteral("builtin:caps"));
+
+        const QString id = lib.duplicate("builtin:elegant");         // deleting a template clears defaults using it
+        lib.setKindTemplate("scripture", id);
+        QCOMPARE(lib.kindTemplate("scripture"), id);
+        lib.remove(id);
+        QCOMPARE(lib.kindTemplate("scripture"), QString());
+        TemplateLibrary third;
+        QCOMPARE(third.kindTemplate("scripture"), QString());
+        QCOMPARE(third.kindTemplate("song"), QStringLiteral("builtin:caps"));
+        lib.setKindTemplate("song", "");
+        QCOMPARE(lib.kindTemplate("song"), QString());
+    }
     void unknownIdFallsBack() {
         TemplateLibrary lib;
         QCOMPARE(lib.get("nope")["id"].toString(), QStringLiteral("builtin:classic"));

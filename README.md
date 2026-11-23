@@ -11,7 +11,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - Sneltoetsen: → / spatie / PgDn = volgende, ← / PgUp = vorige, **B** = zwart, **L** = logo
 - **Timer** (aftellen of stopwatch, groot in het midden of klein in de hoek, met eigen tekst erboven), **klok** en **meldingen** (opgeslagen tekstbalken die je met één klik toont of verbergt) als overlays bovenop de slide
 - **Eigen logo** (Instellingen): PNG, SVG of JPG als logo-scherm (met eigen achtergrondkleur en grootte) en als optioneel watermerk in een hoek van elke slide
-- **Templates**: lettertype, grootte, kleur, uitlijning, schaduw, regelafstand, marge, verduistering en bijbelverwijzing; 5 ingebouwde templates, eigen templates via dupliceren; het actieve template geldt voor de hele dienst, en elk onderdeel kan een eigen template krijgen (⋮ → Template)
+- **Templates**: lettertype, grootte, kleur, uitlijning, schaduw, regelafstand, marge, verduistering en bijbelverwijzing; 5 ingebouwde templates, eigen templates via dupliceren; het actieve template geldt voor de hele dienst, een standaardtemplate per soort onderdeel (Templates → Per onderdeel), en elk onderdeel kan een eigen template krijgen (⋮ → Template)
 - **Bijbel** (Statenvertaling): typ een verwijzing (`Joh 3:16`, `1 Kor 13:4-7`, `Psalm 23`) of zoek op een woord; kies het aantal verzen per slide en de verwijzing staat onderaan elke slide
 - Automatisch opslaan van dienst en liederen
 

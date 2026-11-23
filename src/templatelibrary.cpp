@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QUuid>
+#include <iterator>
 
 QVariantMap TemplateLibrary::defaults() {
     return {{"name", QStringLiteral("Nieuw template")}, {"builtin", false},
@@ -53,6 +54,9 @@ QList<QVariantMap> TemplateLibrary::builtins() {
 TemplateLibrary::TemplateLibrary(QObject *parent) : QObject(parent), m_builtin(builtins()) {
     m_activeId = QSettings().value("activeTemplate", m_builtin.first()["id"]).toString();
     load();
+    const QJsonObject kinds = QJsonDocument::fromJson(QSettings().value("kindTemplates").toString().toUtf8()).object();
+    for (auto it = kinds.begin(); it != kinds.end(); ++it)
+        if (contains(it.value().toString())) m_kindDefaults[it.key()] = it.value().toString();
     if (get(m_activeId)["id"].toString() != m_activeId) m_activeId = m_builtin.first()["id"].toString();
 }
 
@@ -127,10 +131,35 @@ void TemplateLibrary::remove(const QString &id) {
         if (m_custom[i]["id"].toString() != id) continue;
         m_custom.removeAt(i);
         save();
+        for (auto it = m_kindDefaults.begin(); it != m_kindDefaults.end();)   // forget defaults that pointed at it
+            it = (it.value().toString() == id) ? m_kindDefaults.erase(it) : std::next(it);
+        saveKindDefaults();
+        emit kindDefaultsChanged();
         emit changed();
         if (id == m_activeId) setActive(m_builtin.first()["id"].toString());
         return;
     }
+}
+
+void TemplateLibrary::saveKindDefaults() const {
+    QSettings().setValue("kindTemplates", QString::fromUtf8(QJsonDocument(QJsonObject::fromVariantMap(m_kindDefaults)).toJson(QJsonDocument::Compact)));
+}
+
+QString TemplateLibrary::kindTemplate(const QString &kind) const {
+    const QString id = m_kindDefaults.value(kind).toString();
+    return (!id.isEmpty() && contains(id)) ? id : QString();
+}
+
+void TemplateLibrary::setKindTemplate(const QString &kind, const QString &id) {
+    if (kind.isEmpty()) return;
+    if (id.isEmpty() || !contains(id)) {
+        if (m_kindDefaults.remove(kind) == 0) return;
+    } else {
+        if (m_kindDefaults.value(kind).toString() == id) return;
+        m_kindDefaults[kind] = id;
+    }
+    saveKindDefaults();
+    emit kindDefaultsChanged();
 }
 
 void TemplateLibrary::setActive(const QString &id) {

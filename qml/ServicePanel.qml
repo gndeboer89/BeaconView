@@ -91,12 +91,13 @@ Rectangle {
         id: itemMenu
         property int idx: -1
         property string curTemplate: ""
-        onAboutToShow: curTemplate = presenter.itemTemplate(idx)
+        property string defaultName: ""
+        onAboutToShow: { curTemplate = presenter.itemTemplate(idx); defaultName = presenter.defaultTemplateName(idx) }
         MenuItem { text: "Bewerken…"; onTriggered: root.openEditor(itemMenu.idx) }
         Menu {
             title: "Template"
             MenuItem {
-                text: "Standaard (actief template)"
+                text: "Standaard (" + itemMenu.defaultName + ")"
                 checkable: true; checked: itemMenu.curTemplate === "" || !presenter.templates.contains(itemMenu.curTemplate)
                 onTriggered: presenter.setItemTemplate(itemMenu.idx, "")
             }

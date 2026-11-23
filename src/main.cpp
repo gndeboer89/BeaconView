@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     auto cliValue = [&cli](const QString &key) { int i = cli.indexOf(key); return (i >= 0 && i + 1 < cli.size()) ? cli[i + 1] : QString(); };
     engine.rootContext()->setContextProperty("devTab", cliValue("--tab").isEmpty() ? -1 : cliValue("--tab").toInt());
     engine.rootContext()->setContextProperty("devQuery", cliValue("--query"));
+    engine.rootContext()->setContextProperty("devLeft", cliValue("--left-mode").isEmpty() ? 0 : cliValue("--left-mode").toInt());
     engine.rootContext()->setContextProperty("devPage", cliValue("--page").isEmpty() ? 0 : cliValue("--page").toInt());
     engine.load(QUrl("qrc:/qml/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
@@ -38,6 +39,8 @@ int main(int argc, char *argv[]) {
     // Developer aid: `--item-template 1=builtin:modern` gives part 1 its own template, `--select 1` goes live on it.
     if (const QString spec = cliValue("--item-template"); spec.contains('=')) presenter.setItemTemplate(spec.section('=', 0, 0).toInt(), spec.section('=', 1));
     if (const QString sel = cliValue("--select"); !sel.isEmpty()) presenter.selectItem(sel.toInt());
+    // Developer aid: `--kind-template song=builtin:modern` sets the default template for a kind of part.
+    if (const QString spec = cliValue("--kind-template"); spec.contains('=')) presenter.templates()->setKindTemplate(spec.section('=', 0, 0), spec.section('=', 1));
     // Developer aid: `--logo file.png [--watermark]` sets the church logo.
     if (const QString f = cliValue("--logo"); !f.isEmpty()) {
         presenter.branding()->chooseLogo(QUrl::fromLocalFile(f));

@@ -11,6 +11,7 @@ Item {
     property var draft: { presenter.templates.all; return presenter.templates.get(selId) }
     readonly property bool editable: !draft.builtin
     property bool longSample: false
+    property int leftMode: devLeft   // 0 = templates, 1 = default per kind of part
 
     function setKey(k, v) {
         var o = {}
@@ -21,49 +22,91 @@ Item {
     RowLayout {
         anchors.fill: parent; spacing: 12
 
-        // ---- list ---------------------------------------------------------------------
+        // ---- list / defaults per kind -----------------------------------------------------
         Rectangle {
             Layout.preferredWidth: 290; Layout.fillHeight: true
             color: T.panel; radius: 12; border.color: T.border
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 14; spacing: 10
-                Text { text: "Templates"; color: T.text; font.pixelSize: 18; font.bold: true }
-                ListView {
-                    id: list
+
+                RowLayout {
+                    Layout.fillWidth: true; spacing: 6
+                    AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; implicitHeight: 34; text: "Templates"; active: root.leftMode === 0; onClicked: root.leftMode = 0 }
+                    AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; implicitHeight: 34; text: "Per onderdeel"; active: root.leftMode === 1; onClicked: root.leftMode = 1 }
+                }
+
+                StackLayout {
                     Layout.fillWidth: true; Layout.fillHeight: true
-                    clip: true; spacing: 4
-                    model: presenter.templates.all
-                    ScrollBar.vertical: ScrollBar {}
-                    delegate: Rectangle {
-                        width: list.width - 8; height: 52; radius: 8
-                        readonly property bool selected: modelData.id === root.selId
-                        color: selected ? T.accentSoft : (hov.hovered ? T.card : "transparent")
-                        border.color: selected ? T.accent : "transparent"
-                        HoverHandler { id: hov }
-                        TapHandler { onTapped: root.selId = modelData.id }
-                        RowLayout {
-                            anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 10; spacing: 8
-                            ColumnLayout {
-                                Layout.fillWidth: true; spacing: 0
-                                Text { text: modelData.name; color: T.text; font.pixelSize: 14; elide: Text.ElideRight; Layout.fillWidth: true }
-                                Text { text: modelData.builtin ? "Ingebouwd" : "Eigen template"; color: T.muted; font.pixelSize: 11 }
+                    currentIndex: root.leftMode
+
+                    // -- templates --
+                    ColumnLayout {
+                        spacing: 10
+                        ListView {
+                            id: list
+                            Layout.fillWidth: true; Layout.fillHeight: true
+                            clip: true; spacing: 4
+                            model: presenter.templates.all
+                            ScrollBar.vertical: ScrollBar {}
+                            delegate: Rectangle {
+                                width: list.width - 8; height: 52; radius: 8
+                                readonly property bool selected: modelData.id === root.selId
+                                color: selected ? T.accentSoft : (hov.hovered ? T.card : "transparent")
+                                border.color: selected ? T.accent : "transparent"
+                                HoverHandler { id: hov }
+                                TapHandler { onTapped: root.selId = modelData.id }
+                                RowLayout {
+                                    anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 10; spacing: 8
+                                    ColumnLayout {
+                                        Layout.fillWidth: true; spacing: 0
+                                        Text { text: modelData.name; color: T.text; font.pixelSize: 14; elide: Text.ElideRight; Layout.fillWidth: true }
+                                        Text { text: modelData.builtin ? "Ingebouwd" : "Eigen template"; color: T.muted; font.pixelSize: 11 }
+                                    }
+                                    Text { visible: modelData.id === presenter.templates.activeId; text: "● actief"; color: T.ok; font.pixelSize: 12 }
+                                }
                             }
-                            Text { visible: modelData.id === presenter.templates.activeId; text: "● actief"; color: T.ok; font.pixelSize: 12 }
+                        }
+                        AppButton {
+                            Layout.fillWidth: true; text: root.selId === presenter.templates.activeId ? "✓ Actief template" : "Gebruik dit template"
+                            primary: root.selId !== presenter.templates.activeId
+                            enabled: root.selId !== presenter.templates.activeId
+                            onClicked: presenter.templates.setActive(root.selId)
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true; spacing: 8
+                            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Dupliceren"
+                                onClicked: root.selId = presenter.templates.duplicate(root.selId) }
+                            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Verwijderen"; enabled: root.editable
+                                onClicked: { var id = root.selId; root.selId = presenter.templates.activeId === id ? "builtin:classic" : presenter.templates.activeId; presenter.templates.remove(id) } }
                         }
                     }
-                }
-                AppButton {
-                    Layout.fillWidth: true; text: root.selId === presenter.templates.activeId ? "✓ Actief template" : "Gebruik dit template"
-                    primary: root.selId !== presenter.templates.activeId
-                    enabled: root.selId !== presenter.templates.activeId
-                    onClicked: presenter.templates.setActive(root.selId)
-                }
-                RowLayout {
-                    Layout.fillWidth: true; spacing: 8
-                    AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Dupliceren"
-                        onClicked: root.selId = presenter.templates.duplicate(root.selId) }
-                    AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Verwijderen"; enabled: root.editable
-                        onClicked: { var id = root.selId; root.selId = presenter.templates.activeId === id ? "builtin:classic" : presenter.templates.activeId; presenter.templates.remove(id) } }
+
+                    // -- default template per kind of part --
+                    ColumnLayout {
+                        spacing: 8
+                        Text {
+                            Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 12
+                            text: "Kies welk template elke soort onderdeel standaard gebruikt. Een eigen keuze bij een onderdeel (via het menu bij dat onderdeel) gaat voor."
+                        }
+                        Repeater {
+                            model: [{ k: "welcome", t: "Welkom" }, { k: "song", t: "Lied" }, { k: "prayer", t: "Gebed" },
+                                    { k: "scripture", t: "Schriftlezing" }, { k: "sermon", t: "Verkondiging" },
+                                    { k: "offering", t: "Collecte" }, { k: "blessing", t: "Zegen" }, { k: "custom", t: "Eigen tekst" }]
+                            RowLayout {
+                                Layout.fillWidth: true; spacing: 8
+                                Text { text: modelData.t; color: T.text; font.pixelSize: 13; Layout.preferredWidth: 92 }
+                                ComboBox {
+                                    id: kindBox
+                                    Layout.fillWidth: true; Layout.minimumWidth: 0; font.pixelSize: 12
+                                    textRole: "name"; valueRole: "id"
+                                    model: [{ id: "", name: "Actief template" }].concat(presenter.templates.all)
+                                    currentIndex: { presenter.templates.kindDefaults; presenter.templates.all; return Math.max(0, indexOfValue(presenter.templates.kindTemplate(modelData.k))) }
+                                    onActivated: presenter.templates.setKindTemplate(modelData.k, currentValue)
+                                }
+                            }
+                        }
+                        Item { Layout.fillHeight: true }
+                    }
                 }
             }
         }
