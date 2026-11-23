@@ -1,4 +1,5 @@
 import QtQuick
+import QtMultimedia
 import "Backgrounds.js" as Bg
 
 // One slide rendered on a virtual 1920x1080 canvas that scales to any size.
@@ -10,6 +11,13 @@ Item {
     property bool blackout: false
     property bool showLogo: false
     property bool animated: false
+    // Video backgrounds only play where this is true (live output + main preview);
+    // small thumbnails show a placeholder so we never run many decoders at once.
+    property bool playVideo: false
+    readonly property bool isVideo: Bg.isVideo(background)
+    property bool videoFailed: false
+    readonly property string gradientId: isVideo ? "g:graphite" : background
+    onBackgroundChanged: videoFailed = false
     property string reference: ""
     property string shownText: text
     property string shownRef: reference
@@ -28,21 +36,45 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            visible: Bg.isGradient(root.background)
+            visible: Bg.isGradient(root.gradientId)
             gradient: Gradient {
-                GradientStop { position: 0.0; color: Bg.stops(root.background)[0] }
-                GradientStop { position: 0.55; color: Bg.stops(root.background)[1] }
-                GradientStop { position: 1.0; color: Bg.stops(root.background)[2] }
+                GradientStop { position: 0.0; color: Bg.stops(root.gradientId)[0] }
+                GradientStop { position: 0.55; color: Bg.stops(root.gradientId)[1] }
+                GradientStop { position: 1.0; color: Bg.stops(root.gradientId)[2] }
             }
         }
         Image {
             anchors.fill: parent
-            visible: !Bg.isGradient(root.background)
+            visible: !Bg.isGradient(root.background) && !root.isVideo
             source: visible ? root.background : ""
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
         }
-        Rectangle { anchors.fill: parent; color: "#000000"; opacity: 0.22 }  // keeps text readable
+        Text {   // placeholder for video backgrounds in thumbnails
+            anchors.centerIn: parent
+            visible: root.isVideo && (!root.playVideo || root.videoFailed) && root.text === ""
+            text: root.videoFailed ? "⚠" : "▶"; color: "#66ffffff"; font.pixelSize: 260
+        }
+        Loader {   // silent, looping video
+            anchors.fill: parent
+            active: root.isVideo && root.playVideo && !root.videoFailed
+            sourceComponent: Item {
+                MediaPlayer {
+                    id: player
+                    source: root.background
+                    videoOutput: video
+                    loops: MediaPlayer.Infinite
+                    onSourceChanged: play()
+                    onErrorOccurred: function (error, errorString) {
+                        console.warn("Video kan niet worden afgespeeld:", errorString)
+                        root.videoFailed = true
+                    }
+                    Component.onCompleted: play()
+                }
+                VideoOutput { id: video; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectCrop }
+            }
+        }
+        Rectangle { anchors.fill: parent; color: "#000000"; opacity: root.isVideo ? 0.35 : 0.22 }  // keeps text readable
 
         Item {
             id: textLayer

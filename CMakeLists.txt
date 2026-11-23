@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Multimedia)
 qt_standard_project_setup()
 
 qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
@@ -40,7 +40,7 @@ set_target_properties(beaconview PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
 target_compile_definitions(beaconview PRIVATE APP_VERSION="${PROJECT_VERSION}")
-target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2)
+target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia)
 
 include(GNUInstallDirs)
 install(TARGETS beaconview BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

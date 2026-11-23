@@ -9,6 +9,7 @@ var gradients = [
     { id: "graphite", name: "Grafiet",    stops: ["#101114", "#23262d", "#3a3e48"] }
 ]
 function isGradient(b) { return !b || b.indexOf("g:") === 0 }
+function isVideo(b) { return !!b && /\.(mp4|m4v|mov|webm|mkv|avi)$/i.test(b) }
 function stops(b) {
     var id = b ? b.substring(2) : "sunset"
     for (var i = 0; i < gradients.length; ++i)

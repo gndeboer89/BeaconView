@@ -25,6 +25,10 @@ int main(int argc, char *argv[]) {
     if (engine.rootObjects().isEmpty()) return 1;
 
     const QStringList args = app.arguments();
+    // Developer aid: `--import file` adds a file to the media library.
+    if (const QString f = cliValue("--import"); !f.isEmpty()) presenter.importMedia(QUrl::fromLocalFile(f));
+    // Developer aid: `--background /path/file.mp4` uses a file as default background.
+    if (const QString bg = cliValue("--background"); !bg.isEmpty()) presenter.setDefaultBackground(QUrl::fromLocalFile(bg).toString());
     // Developer aid: `--passage "Psalm 23:1-4"` adds a Bible passage and shows it.
     if (const QString ref = cliValue("--passage"); !ref.isEmpty()) presenter.addPassage(ref, 2, true, true);
     // Developer aid: `--demo` starts the service and steps through two slides.
@@ -36,7 +40,7 @@ int main(int argc, char *argv[]) {
     // Developer aid: `beaconview --screenshot out.png` renders the window to a file and exits.
     if (int i = args.indexOf("--screenshot"); i >= 0 && i + 1 < args.size()) {
         const QString path = args[i + 1];
-        QTimer::singleShot(1500, &app, [&engine, &app, path] {
+        QTimer::singleShot(qEnvironmentVariableIntValue("BEACONVIEW_SHOT_DELAY") > 0 ? qEnvironmentVariableIntValue("BEACONVIEW_SHOT_DELAY") : 1500, &app, [&engine, &app, path] {
             auto *w = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
             if (w) w->grabWindow().save(path);
             app.quit();

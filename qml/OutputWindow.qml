@@ -50,6 +50,7 @@ Window {
         blackout: presenter.blackout
         showLogo: presenter.logo
         animated: true
+        playVideo: true
     }
     MouseArea { anchors.fill: parent; cursorShape: win.singleScreen ? Qt.ArrowCursor : Qt.BlankCursor }
 }

@@ -191,8 +191,8 @@ Rectangle {
 
     FileDialog {
         id: fileDialog
-        title: "Kies een achtergrondafbeelding"
-        nameFilters: ["Afbeeldingen (*.png *.jpg *.jpeg *.webp *.bmp)"]
+        title: "Kies een afbeelding of video"
+        nameFilters: ["Afbeeldingen en video's (*.png *.jpg *.jpeg *.webp *.bmp *.mp4 *.m4v *.mov *.webm *.mkv)", "Alle bestanden (*)"]
         onAccepted: presenter.importMedia(selectedFile)
     }
     TextEditorDialog {
