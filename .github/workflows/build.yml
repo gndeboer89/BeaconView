@@ -41,12 +41,15 @@ jobs:
           Compress-Archive dist/* BeaconView-Windows.zip
       - name: Package (macOS)
         if: runner.os == 'macOS'
-        run: macdeployqt build/beaconview.app -qmldir=qml -dmg
+        run: |
+          macdeployqt build/beaconview.app -qmldir=qml -dmg
+          ls -la build/*.dmg
           mv build/beaconview.dmg BeaconView-macOS.dmg
       - uses: actions/upload-artifact@v4
         if: runner.os != 'Linux'
         with:
           name: beaconview-${{ runner.os }}
+          if-no-files-found: error   # a missing package must fail the build, not pass silently
           path: |
             BeaconView-Windows.zip
             BeaconView-macOS.dmg
