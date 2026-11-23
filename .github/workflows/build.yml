@@ -39,6 +39,16 @@ jobs:
           Copy-Item build/Release/beaconview.exe dist/
           windeployqt --qmldir qml dist/beaconview.exe
           Compress-Archive dist/* BeaconView-Windows.zip
+      - name: Installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path CMakeLists.txt -Pattern 'project\(BeaconView VERSION ([0-9.]+)').Matches.Groups[1].Value
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          & $iscc "/DMyAppVersion=$v" installer\beaconview.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+          Get-ChildItem installer-out
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -52,6 +62,7 @@ jobs:
           if-no-files-found: error   # a missing package must fail the build, not pass silently
           path: |
             BeaconView-Windows.zip
+            installer-out/BeaconView-Setup-*.exe
             BeaconView-macOS.dmg
   release:
     if: startsWith(github.ref, 'refs/tags/v')
