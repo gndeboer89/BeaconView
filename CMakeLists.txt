@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Multimedia Svg)
 qt_standard_project_setup()
 
 qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
@@ -13,7 +13,12 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/servicemodel.cpp src/servicemodel.h
     src/songlibrary.cpp  src/songlibrary.h
     src/presenter.cpp    src/presenter.h
+    src/bible.cpp        src/bible.h
+    src/templatelibrary.cpp src/templatelibrary.h
+    src/overlaycontroller.cpp src/overlaycontroller.h
+    src/branding.cpp src/branding.h
 )
+qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
 
 qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/Main.qml
@@ -23,6 +28,13 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/Theme.js
     qml/ServicePanel.qml
     qml/PreviewPanel.qml
+    qml/ControlPanel.qml
+    qml/TemplatesPage.qml
+    qml/OverlayLayer.qml
+    qml/SettingsPage.qml
+    qml/OverlayPanel.qml
+    qml/PromptDialog.qml
+    qml/ColorField.qml
     qml/SidePanel.qml
     qml/ScreensPage.qml
     qml/TextEditorDialog.qml
@@ -37,7 +49,42 @@ set_target_properties(beaconview PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
 target_compile_definitions(beaconview PRIVATE APP_VERSION="${PROJECT_VERSION}")
-target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2)
+target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg)
 
 include(GNUInstallDirs)
 install(TARGETS beaconview BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# Unit tests: cmake -DBUILD_TESTING=ON ... && ctest --test-dir build --output-on-failure
+option(BUILD_TESTING "Build unit tests" OFF)
+if(BUILD_TESTING)
+    enable_testing()
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+    qt_add_executable(tst_bible tests/tst_bible.cpp src/bible.cpp src/bible.h)
+    qt_add_resources(tst_bible "bible_data" PREFIX "/" FILES data/bible_svv.json)
+    target_include_directories(tst_bible PRIVATE src)
+    target_link_libraries(tst_bible PRIVATE Qt6::Test)
+    add_test(NAME bible COMMAND tst_bible)
+    qt_add_executable(tst_templates tests/tst_templates.cpp src/templatelibrary.cpp src/templatelibrary.h)
+    target_include_directories(tst_templates PRIVATE src)
+    target_link_libraries(tst_templates PRIVATE Qt6::Test)
+    add_test(NAME templates COMMAND tst_templates)
+    qt_add_executable(tst_overlays tests/tst_overlays.cpp src/overlaycontroller.cpp src/overlaycontroller.h)
+    target_include_directories(tst_overlays PRIVATE src)
+    target_link_libraries(tst_overlays PRIVATE Qt6::Test)
+    add_test(NAME overlays COMMAND tst_overlays)
+    qt_add_executable(tst_branding tests/tst_branding.cpp src/branding.cpp src/branding.h)
+    target_include_directories(tst_branding PRIVATE src)
+    target_link_libraries(tst_branding PRIVATE Qt6::Test Qt6::Gui)
+    add_test(NAME branding COMMAND tst_branding)
+    qt_add_executable(tst_service tests/tst_service.cpp src/servicemodel.cpp src/servicemodel.h)
+    target_include_directories(tst_service PRIVATE src)
+    target_link_libraries(tst_service PRIVATE Qt6::Test)
+    add_test(NAME service COMMAND tst_service)
+    qt_add_executable(tst_presenter tests/tst_presenter.cpp
+        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/bible.cpp
+        src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp)
+    qt_add_resources(tst_presenter "bible_data" PREFIX "/" FILES data/bible_svv.json)
+    target_include_directories(tst_presenter PRIVATE src)
+    target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui)
+    add_test(NAME presenter COMMAND tst_presenter)
+endif()

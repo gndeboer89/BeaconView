@@ -44,11 +44,16 @@ Window {
 
     SlideView {
         anchors.fill: parent
+        tpl: presenter.liveTemplate
         text: presenter.liveText
+        reference: presenter.liveReference
         background: presenter.liveBackground
         blackout: presenter.blackout
         showLogo: presenter.logo
         animated: true
+        playVideo: true
+        showOverlays: true
+        showWatermark: true
     }
     MouseArea { anchors.fill: parent; cursorShape: win.singleScreen ? Qt.ArrowCursor : Qt.BlankCursor }
 }

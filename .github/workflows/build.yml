@@ -22,11 +22,15 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: ${{ matrix.qt }}
+          modules: qtmultimedia
           cache: true
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=${{ runner.os == 'Linux' && 'ON' || 'OFF' }}
       - name: Build
         run: cmake --build build --config Release
+      - name: Test
+        if: runner.os == 'Linux'
+        run: ctest --test-dir build --output-on-failure
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -37,12 +41,15 @@ jobs:
           Compress-Archive dist/* BeaconView-Windows.zip
       - name: Package (macOS)
         if: runner.os == 'macOS'
-        run: macdeployqt build/beaconview.app -qmldir=qml -dmg
+        run: |
+          macdeployqt build/beaconview.app -qmldir=qml -dmg
+          ls -la build/*.dmg
           mv build/beaconview.dmg BeaconView-macOS.dmg
       - uses: actions/upload-artifact@v4
         if: runner.os != 'Linux'
         with:
           name: beaconview-${{ runner.os }}
+          if-no-files-found: error   # a missing package must fail the build, not pass silently
           path: |
             BeaconView-Windows.zip
             BeaconView-macOS.dmg

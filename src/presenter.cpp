@@ -20,6 +20,10 @@ Presenter::Presenter(QObject *parent) : QObject(parent) {
     connect(&m_saveTimer, &QTimer::timeout, this, &Presenter::save);
 
     load();
+    // Template edits / deletions change what is shown right now
+    connect(&m_templates, &TemplateLibrary::changed, this, &Presenter::liveChanged);
+    connect(&m_templates, &TemplateLibrary::activeChanged, this, &Presenter::liveChanged);
+    connect(&m_templates, &TemplateLibrary::kindDefaultsChanged, this, &Presenter::liveChanged);
     // Keep indices valid and the live view fresh whenever the service changes.
     connect(&m_service, &QAbstractItemModel::dataChanged, this, &Presenter::onModelChanged);
     connect(&m_service, &QAbstractItemModel::rowsInserted, this, &Presenter::onModelChanged);
@@ -43,6 +47,23 @@ QString Presenter::slideAt(int item, int slide) const {
     return (slide >= 0 && slide < it->slides.size()) ? it->slides[slide] : QString();
 }
 
+QString Presenter::refAt(int item, int slide) const {
+    const ServiceItem *it = m_service.item(item);
+    if (!it) return {};
+    if (slide >= 0 && slide < it->refs.size()) return it->refs[slide];
+    return (it->kind == "scripture") ? it->subtitle : QString();
+}
+
+QVariantMap Presenter::templateFor(int item) const {
+    const ServiceItem *it = m_service.item(item);
+    if (it && !it->templateId.isEmpty() && m_templates.contains(it->templateId)) return m_templates.get(it->templateId);   // own choice
+    if (it) {
+        const QString kindId = m_templates.kindTemplate(it->kind);                                                         // default for this kind of part
+        if (!kindId.isEmpty()) return m_templates.get(kindId);
+    }
+    return m_templates.active();   // otherwise the active template (also when a chosen template was deleted)
+}
+
 QString Presenter::backgroundOf(int item) const {
     const ServiceItem *it = m_service.item(item);
     return (it && !it->background.isEmpty()) ? it->background : m_defaultBg;
@@ -54,6 +75,7 @@ int Presenter::slideCount() const {
 }
 
 QString Presenter::liveText() const { return slideAt(m_item, m_slide); }
+QString Presenter::liveReference() const { return refAt(m_item, m_slide); }
 QString Presenter::liveBackground() const { return backgroundOf(m_item); }
 
 QString Presenter::nextText() const {
@@ -61,38 +83,78 @@ QString Presenter::nextText() const {
     return slideAt(m_item + 1, 0);
 }
 
+QString Presenter::nextReference() const {
+    if (m_slide + 1 < slideCount()) return refAt(m_item, m_slide + 1);
+    return refAt(m_item + 1, 0);
+}
+
+QVariantMap Presenter::liveTemplate() const { return templateFor(m_item); }
+QVariantMap Presenter::nextTemplate() const { return templateFor(m_slide + 1 < slideCount() ? m_item : m_item + 1); }
+
 QString Presenter::nextBackground() const {
     return backgroundOf(m_slide + 1 < slideCount() ? m_item : m_item + 1);
 }
 
+QStringList Presenter::currentSlides() const {
+    const ServiceItem *it = m_service.item(m_item);
+    if (!it) return {};
+    return it->slides.isEmpty() ? QStringList{it->title} : it->slides;
+}
+
+QStringList Presenter::currentRefs() const {
+    QStringList refs;
+    for (int i = 0, n = currentSlides().size(); i < n; ++i) refs << refAt(m_item, i);
+    return refs;
+}
+
+QString Presenter::currentTitle() const {
+    const ServiceItem *it = m_service.item(m_item);
+    if (!it) return {};
+    return it->subtitle.isEmpty() ? it->title : it->title + QStringLiteral(" – ") + it->subtitle;
+}
+
 void Presenter::selectItem(int i) {
     if (!m_service.item(i)) return;
+    const bool otherItem = i != m_item;
     m_item = i;
     m_slide = 0;
+    if (otherItem) emit slidesChanged();
+    emit liveChanged();
+}
+
+void Presenter::goToSlide(int slide) {
+    if (slide < 0 || slide >= slideCount() || slide == m_slide) return;
+    m_slide = slide;
     emit liveChanged();
 }
 
 void Presenter::nextSlide() {
+    bool otherItem = false;
     if (m_slide + 1 < slideCount()) {
         ++m_slide;
     } else if (m_service.item(m_item + 1)) {
         ++m_item;
         m_slide = 0;
+        otherItem = true;
     } else {
         return;
     }
+    if (otherItem) emit slidesChanged();
     emit liveChanged();
 }
 
 void Presenter::prevSlide() {
+    bool otherItem = false;
     if (m_slide > 0) {
         --m_slide;
     } else if (m_item > 0) {
         --m_item;
         m_slide = slideCount() - 1;
+        otherItem = true;
     } else {
         return;
     }
+    if (otherItem) emit slidesChanged();
     emit liveChanged();
 }
 
@@ -106,6 +168,7 @@ void Presenter::startService() {
 void Presenter::onModelChanged() {
     if (m_item >= m_service.count()) m_item = qMax(0, m_service.count() - 1);
     if (m_slide >= slideCount()) m_slide = qMax(0, slideCount() - 1);
+    emit slidesChanged();
     emit liveChanged();
     scheduleSave();
 }
@@ -152,6 +215,18 @@ void Presenter::addSong(int songIndex) {
                       ServiceModel::splitSlides(m_songs.data(idx, SongLibrary::LyricsRole).toString())});
 }
 
+int Presenter::addPassage(const QString &reference, int versesPerSlide, bool verseNumbers, bool show) {
+    const Bible::Passage p = m_bible.parse(reference);
+    const auto slides = m_bible.slides(p, versesPerSlide, verseNumbers);
+    if (slides.isEmpty()) return -1;
+    ServiceItem it{"scripture", "Schriftlezing", m_bible.label(p), {}, {}, {}};
+    for (const auto &s : slides) { it.slides << s.text; it.refs << s.reference; }
+    m_service.append(it);
+    const int idx = m_service.count() - 1;
+    if (show) selectItem(idx);
+    return idx;
+}
+
 void Presenter::editItem(int i, const QString &title, const QString &subtitle, const QString &text) {
     const ServiceItem *old = m_service.item(i);
     if (!old) return;
@@ -159,6 +234,7 @@ void Presenter::editItem(int i, const QString &title, const QString &subtitle, c
     it.title = title;
     it.subtitle = subtitle;
     it.slides = ServiceModel::splitSlides(text);
+    if (it.slides.size() != it.refs.size()) it.refs.clear();  // references only stay valid while slide count is unchanged
     m_service.replace(i, it);
 }
 
@@ -170,6 +246,14 @@ QString Presenter::itemText(int i) const {
 void Presenter::removeItem(int i) { m_service.remove(i); }
 void Presenter::moveItem(int i, int delta) { m_service.move(i, i + delta); }
 void Presenter::setItemBackground(int i, const QString &bg) { m_service.setBackground(i, bg); }
+void Presenter::setItemTemplate(int i, const QString &templateId) { m_service.setTemplate(i, templateId); }
+QString Presenter::defaultTemplateName(int i) const {
+    const ServiceItem *it = m_service.item(i);
+    const QString kindId = it ? m_templates.kindTemplate(it->kind) : QString();
+    return (kindId.isEmpty() ? m_templates.active() : m_templates.get(kindId))["name"].toString();
+}
+
+QString Presenter::itemTemplate(int i) const { const ServiceItem *it = m_service.item(i); return it ? it->templateId : QString(); }
 
 void Presenter::importMedia(const QUrl &file) {
     const QString src = file.toLocalFile();

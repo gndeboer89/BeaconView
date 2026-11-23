@@ -5,14 +5,24 @@ import "Theme.js" as T
 
 ApplicationWindow {
     id: win
-    width: 1360; height: 820; minimumWidth: 1100; minimumHeight: 700
+    width: 1440; height: 860; minimumWidth: 1320; minimumHeight: 760
     visible: true
     title: "BeaconView"
     color: T.bg
+    // Dark palette so menus, dialogs and combo boxes match the UI
+    palette {
+        window: T.panel; windowText: T.text; base: T.card; text: T.text
+        button: T.card; buttonText: T.text; highlight: T.accent; highlightedText: "white"
+        mid: T.border; dark: T.border; light: T.cardHover; placeholderText: T.muted; toolTipBase: T.card; toolTipText: T.text
+    }
     property int page: 0
     onClosing: Qt.quit()
 
     OutputWindow {}
+    Component.onCompleted: {   // developer aid: --tab N --query "Joh 3:16"
+        win.page = devPage
+        if (devTab >= 0) { side.tab = devTab; if (devQuery !== "") side.setQuery(devQuery) }
+    }
 
     readonly property bool typing: activeFocusItem && activeFocusItem.hasOwnProperty("cursorPosition")
     Shortcut { sequences: ["Right", "Space", "PgDown"]; enabled: !win.typing; onActivated: presenter.nextSlide() }
@@ -55,14 +65,20 @@ ApplicationWindow {
 
             RowLayout {
                 spacing: 12
-                ServicePanel { Layout.preferredWidth: 340; Layout.fillHeight: true }
-                PreviewPanel { Layout.fillWidth: true; Layout.fillHeight: true }
-                SidePanel { Layout.preferredWidth: 340; Layout.fillHeight: true }
+                ServicePanel { Layout.preferredWidth: 320; Layout.fillHeight: true }
+                ColumnLayout {
+                    Layout.fillWidth: true; Layout.fillHeight: true; spacing: 12
+                    PreviewPanel { Layout.fillWidth: true; Layout.fillHeight: true }
+                    SidePanel { id: side; Layout.fillWidth: true; Layout.preferredHeight: 330 }
+                }
+                ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true
+                    onBibleRequested: side.focusBible()
+                    onOverlaysRequested: side.tab = 3 }
             }
             Placeholder { title: "Media" ; note: "Mediabibliotheek (video's, afbeeldingen) – komt in een volgende versie. Achtergronden vind je nu rechts in Dienst." }
-            Placeholder { title: "Templates"; note: "Lettertype, kleuren en layout per template – komt in een volgende versie." }
+            TemplatesPage {}
             ScreensPage {}
-            Placeholder { title: "Instellingen" }
+            SettingsPage {}
         }
     }
 }
