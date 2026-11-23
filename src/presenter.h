@@ -6,6 +6,7 @@
 #include "bible.h"
 #include "servicemodel.h"
 #include "songlibrary.h"
+#include "templatelibrary.h"
 
 // Central controller: owns the service, the live state shown on the output
 // screen(s) and persistence. Exposed to QML as `presenter`.
@@ -14,6 +15,7 @@ class Presenter : public QObject {
     Q_PROPERTY(ServiceModel *service READ service CONSTANT)
     Q_PROPERTY(SongLibrary *songs READ songs CONSTANT)
     Q_PROPERTY(Bible *bible READ bible CONSTANT)
+    Q_PROPERTY(TemplateLibrary *templates READ templates CONSTANT)
     Q_PROPERTY(QString serviceName READ serviceName WRITE setServiceName NOTIFY serviceNameChanged)
     Q_PROPERTY(int currentItem READ currentItem NOTIFY liveChanged)
     Q_PROPERTY(int currentSlide READ currentSlide NOTIFY liveChanged)
@@ -37,6 +39,7 @@ public:
     ServiceModel *service() { return &m_service; }
     SongLibrary *songs() { return &m_songs; }
     Bible *bible() { return &m_bible; }
+    TemplateLibrary *templates() { return &m_templates; }
     QString serviceName() const { return m_name; }
     void setServiceName(const QString &n);
     int currentItem() const { return m_item; }
@@ -101,6 +104,7 @@ private:
     ServiceModel m_service;
     SongLibrary m_songs;
     Bible m_bible;
+    TemplateLibrary m_templates;
     QString m_name = "Kerkdienst – Zondag";
     int m_item = 0, m_slide = 0;
     bool m_blackout = false, m_logo = false, m_outputOn = false;

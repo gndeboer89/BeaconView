@@ -20,6 +20,7 @@ ApplicationWindow {
 
     OutputWindow {}
     Component.onCompleted: {   // developer aid: --tab N --query "Joh 3:16"
+        win.page = devPage
         if (devTab >= 0) { side.tab = devTab; if (devQuery !== "") side.setQuery(devQuery) }
     }
 
@@ -74,7 +75,7 @@ ApplicationWindow {
                     onBibleRequested: side.focusBible() }
             }
             Placeholder { title: "Media" ; note: "Mediabibliotheek (video's, afbeeldingen) – komt in een volgende versie. Achtergronden vind je nu rechts in Dienst." }
-            Placeholder { title: "Templates"; note: "Lettertype, kleuren en layout per template – komt in een volgende versie." }
+            TemplatesPage {}
             ScreensPage {}
             Placeholder { title: "Instellingen" }
         }

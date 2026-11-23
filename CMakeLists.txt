@@ -14,6 +14,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/songlibrary.cpp  src/songlibrary.h
     src/presenter.cpp    src/presenter.h
     src/bible.cpp        src/bible.h
+    src/templatelibrary.cpp src/templatelibrary.h
 )
 qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
 
@@ -26,6 +27,8 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/ServicePanel.qml
     qml/PreviewPanel.qml
     qml/ControlPanel.qml
+    qml/TemplatesPage.qml
+    qml/ColorField.qml
     qml/SidePanel.qml
     qml/ScreensPage.qml
     qml/TextEditorDialog.qml
@@ -55,4 +58,8 @@ if(BUILD_TESTING)
     target_include_directories(tst_bible PRIVATE src)
     target_link_libraries(tst_bible PRIVATE Qt6::Test)
     add_test(NAME bible COMMAND tst_bible)
+    qt_add_executable(tst_templates tests/tst_templates.cpp src/templatelibrary.cpp src/templatelibrary.h)
+    target_include_directories(tst_templates PRIVATE src)
+    target_link_libraries(tst_templates PRIVATE Qt6::Test)
+    add_test(NAME templates COMMAND tst_templates)
 endif()

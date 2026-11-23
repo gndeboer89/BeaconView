@@ -11,6 +11,8 @@ Item {
     property bool blackout: false
     property bool showLogo: false
     property bool animated: false
+    // Look of the text; defaults to the active template, the template editor overrides it.
+    property var tpl: presenter.templates.active
     // Video backgrounds only play where this is true (live output + main preview);
     // small thumbnails show a placeholder so we never run many decoders at once.
     property bool playVideo: false
@@ -74,38 +76,42 @@ Item {
                 VideoOutput { id: video; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectCrop }
             }
         }
-        Rectangle { anchors.fill: parent; color: "#000000"; opacity: root.isVideo ? 0.35 : 0.22 }  // keeps text readable
+        Rectangle { anchors.fill: parent; color: "#000000"; opacity: Math.min(0.9, root.tpl.dim + (root.isVideo ? 0.13 : 0)) }  // keeps text readable
 
         Item {
             id: textLayer
             anchors.fill: parent
             Item {
                 anchors.fill: parent
-                anchors.margins: 140
-                anchors.bottomMargin: root.shownRef !== "" ? 250 : 140
-                Text {   // soft shadow
-                    x: 5; y: 5; width: parent.width; height: parent.height   // same box as the main text, so Fit picks the same size
-                    text: root.shownText; color: "#99000000"
-                    font.pixelSize: 108; font.bold: true; lineHeight: 1.15
-                    fontSizeMode: Text.Fit; minimumPixelSize: 40
-                    horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
-                }
-                Text {
-                    anchors.fill: parent
-                    text: root.shownText; color: "white"
-                    font.pixelSize: 108; font.bold: true; lineHeight: 1.15
-                    fontSizeMode: Text.Fit; minimumPixelSize: 40
-                    horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                    wrapMode: Text.WordWrap
+                anchors.margins: root.tpl.margin
+                anchors.bottomMargin: root.shownRef !== "" ? Math.max(root.tpl.margin, 250) : root.tpl.margin
+                Repeater {
+                    model: root.tpl.shadow ? 2 : 1     // first a soft shadow copy, then the text itself
+                    Text {
+                        readonly property bool isShadow: root.tpl.shadow && index === 0
+                        x: isShadow ? 5 : 0; y: isShadow ? 5 : 0
+                        width: parent.width; height: parent.height
+                        text: root.shownText
+                        color: isShadow ? "#99000000" : root.tpl.textColor
+                        font.family: root.tpl.fontFamily !== "" ? root.tpl.fontFamily : Qt.application.font.family
+                        font.pixelSize: root.tpl.fontSize
+                        font.bold: root.tpl.bold; font.italic: root.tpl.italic
+                        font.capitalization: root.tpl.uppercase ? Font.AllUppercase : Font.MixedCase
+                        lineHeight: root.tpl.lineHeight
+                        fontSizeMode: Text.Fit; minimumPixelSize: Math.min(40, root.tpl.fontSize)
+                        wrapMode: Text.WordWrap
+                        horizontalAlignment: root.tpl.align === "left" ? Text.AlignLeft : root.tpl.align === "right" ? Text.AlignRight : Text.AlignHCenter
+                        verticalAlignment: root.tpl.vAlign === "top" ? Text.AlignTop : root.tpl.vAlign === "bottom" ? Text.AlignBottom : Text.AlignVCenter
+                    }
                 }
             }
             Text {   // reference, e.g. "Psalm 23:1-2"
                 visible: root.shownRef !== ""
                 anchors.horizontalCenter: parent.horizontalCenter
-                y: 1080 - 200
-                text: root.shownRef; color: "#f0f0f8"
-                font.pixelSize: 56; font.italic: true
+                y: 1080 - 100 - height
+                text: root.shownRef; color: root.tpl.refColor
+                font.family: root.tpl.fontFamily !== "" ? root.tpl.fontFamily : Qt.application.font.family
+                font.pixelSize: root.tpl.refSize; font.italic: root.tpl.refItalic
                 style: Text.Raised; styleColor: "#99000000"
             }
         }
