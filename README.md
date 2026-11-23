@@ -15,6 +15,16 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - **Bijbel** (Statenvertaling): typ een verwijzing (`Joh 3:16`, `1 Kor 13:4-7`, `Psalm 23`) of zoek op een woord; kies het aantal verzen per slide en de verwijzing staat onderaan elke slide
 - Automatisch opslaan van dienst en liederen
 
+## Logo en iconen
+`assets/branding/` bevat de aangeleverde bestanden (logo, programma-icoon, documenticoon; PNG en ICO). Het programma-icoon wordt gebruikt voor het venster, `beaconview.exe` en de installer (Windows) en de app (macOS, `.icns`). Het documenticoon is nog niet in gebruik: het is bedoeld voor een eigen bestandstype voor diensten.
+
+## Installeren
+Bij elke release (tag `v*`) bouwt de CI:
+- **Windows**: `BeaconView-Setup-<versie>.exe` (installer, Inno Setup) en `BeaconView-Windows.zip` (zonder installatie)
+- **macOS**: `BeaconView-macOS.dmg`
+
+De pakketten zijn nog niet ondertekend: Windows (SmartScreen) en macOS (Gatekeeper) tonen daarom een waarschuwing bij het eerste openen.
+
 ## Bouwen
 Vereist Qt 6.4+ (Quick, QuickControls2), CMake 3.21+ en een C++17-compiler.
 

@@ -38,8 +38,14 @@ ApplicationWindow {
             Layout.fillWidth: true; Layout.preferredHeight: 56; radius: 12; color: T.panel; border.color: T.border
             RowLayout {
                 anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 10; spacing: 6
-                Text { text: "✝"; color: T.accent; font.pixelSize: 24 }
-                Text { text: "BeaconView"; color: T.text; font.pixelSize: 18; font.bold: true; Layout.rightMargin: 24 }
+                Image {   // BeaconView logo
+                    source: "qrc:/assets/logo.png"
+                    Layout.preferredHeight: 42
+                    Layout.preferredWidth: Math.round(42 * implicitWidth / Math.max(1, implicitHeight))
+                    Layout.rightMargin: 24
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true; mipmap: true
+                }
                 Repeater {
                     model: ["Dienst", "Media", "Templates", "Schermen", "Instellingen"]
                     AppButton { text: modelData; flat: true; active: win.page === index; implicitHeight: 38
