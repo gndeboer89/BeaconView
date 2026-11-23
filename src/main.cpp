@@ -1,4 +1,5 @@
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -11,6 +12,7 @@ int main(int argc, char *argv[]) {
     app.setOrganizationName("BeaconView");
     app.setApplicationName("BeaconView");
     app.setApplicationVersion(APP_VERSION);
+    app.setWindowIcon(QIcon(":/assets/icon/icon.png"));   // window icon (taskbar/Dock use the bundled .ico/.icns)
     // "Basic" is the same on every OS, so the UI looks identical on Windows/macOS/Linux.
     QQuickStyle::setStyle("Basic");
 

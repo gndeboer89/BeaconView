@@ -16,6 +16,7 @@ AppPublisher=BeaconView
 DefaultDirName={autopf}\BeaconView
 DefaultGroupName=BeaconView
 UninstallDisplayIcon={app}\beaconview.exe
+SetupIconFile=..\assets\icon\beaconview.ico
 OutputDir=..\installer-out
 OutputBaseFilename=BeaconView-Setup-{#MyAppVersion}
 Compression=lzma2

@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 project(BeaconView VERSION 0.0.1.1 LANGUAGES CXX)
+if(WIN32)
+    enable_language(RC)   # for the application icon (assets/beaconview.rc)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,7 +22,18 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/branding.cpp src/branding.h
 )
 qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
-qt_add_resources(beaconview "assets" PREFIX "/" FILES assets/logo.png)
+qt_add_resources(beaconview "assets" PREFIX "/" FILES assets/logo.png assets/icon/icon.png)
+
+# Application icon: .rc on Windows, .icns in the app bundle on macOS
+if(WIN32)
+    target_sources(beaconview PRIVATE assets/beaconview.rc)
+endif()
+if(APPLE)
+    set(BV_ICNS ${CMAKE_CURRENT_SOURCE_DIR}/assets/icon/beaconview.icns)
+    target_sources(beaconview PRIVATE ${BV_ICNS})
+    set_source_files_properties(${BV_ICNS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set_target_properties(beaconview PROPERTIES MACOSX_BUNDLE_ICON_FILE beaconview.icns)
+endif()
 
 qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/Main.qml
@@ -88,4 +102,8 @@ if(BUILD_TESTING)
     target_include_directories(tst_presenter PRIVATE src)
     target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui)
     add_test(NAME presenter COMMAND tst_presenter)
+    qt_add_executable(tst_assets tests/tst_assets.cpp)
+    qt_add_resources(tst_assets "assets" PREFIX "/" FILES assets/logo.png assets/icon/icon.png)
+    target_link_libraries(tst_assets PRIVATE Qt6::Test Qt6::Gui)
+    add_test(NAME assets COMMAND tst_assets)
 endif()

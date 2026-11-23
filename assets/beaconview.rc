@@ -1,0 +1,2 @@
+// Windows resource script: gives beaconview.exe its icon (Explorer, taskbar, installer shortcuts).
+IDI_ICON1 ICON "icon/beaconview.ico"
