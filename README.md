@@ -3,7 +3,7 @@
 Native kerkpresentatiesoftware voor beamer, tv en LED-schermen.
 Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
-## Wat werkt nu (v0.0.1.0)
+## Wat werkt nu (v0.0.1.1)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster
