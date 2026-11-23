@@ -7,7 +7,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster
-- Huidige/volgende slide, zwart scherm, logo, achtergrondkeuze (kleurverlopen, eigen afbeeldingen of **video's**: mp4/mov/webm/mkv, stil en in een lus)
+- Alle slides van het huidige onderdeel als aanklikbare lijst (klik = die slide live; de lijst scrolt mee), zwart scherm, logo, achtergrondkeuze (kleurverlopen, eigen afbeeldingen of **video's**: mp4/mov/webm/mkv, stil en in een lus)
 - Sneltoetsen: → / spatie / PgDn = volgende, ← / PgUp = vorige, **B** = zwart, **L** = logo
 - **Timer** (aftellen of stopwatch, groot in het midden of klein in de hoek, met eigen tekst erboven), **klok** en **meldingen** (opgeslagen tekstbalken die je met één klik toont of verbergt) als overlays bovenop de slide
 - **Eigen logo** (Instellingen): PNG, SVG of JPG als logo-scherm (met eigen achtergrondkleur en grootte) en als optioneel watermerk in een hoek van elke slide

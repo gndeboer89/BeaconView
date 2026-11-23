@@ -24,6 +24,10 @@ class Presenter : public QObject {
     Q_PROPERTY(int currentItem READ currentItem NOTIFY liveChanged)
     Q_PROPERTY(int currentSlide READ currentSlide NOTIFY liveChanged)
     Q_PROPERTY(int slideCount READ slideCount NOTIFY liveChanged)
+    // All slides of the current part, so the operator can click any of them
+    Q_PROPERTY(QStringList currentSlides READ currentSlides NOTIFY slidesChanged)
+    Q_PROPERTY(QStringList currentRefs READ currentRefs NOTIFY slidesChanged)
+    Q_PROPERTY(QString currentTitle READ currentTitle NOTIFY slidesChanged)
     Q_PROPERTY(QString liveText READ liveText NOTIFY liveChanged)
     Q_PROPERTY(QString liveBackground READ liveBackground NOTIFY liveChanged)
     Q_PROPERTY(QString liveReference READ liveReference NOTIFY liveChanged)
@@ -53,6 +57,9 @@ public:
     int currentItem() const { return m_item; }
     int currentSlide() const { return m_slide; }
     int slideCount() const;
+    QStringList currentSlides() const;
+    QStringList currentRefs() const;
+    QString currentTitle() const;
     QString liveText() const;
     QString liveBackground() const;
     QString liveReference() const;
@@ -75,6 +82,7 @@ public:
     QString lastSaved() const { return m_lastSaved; }
 
     Q_INVOKABLE void selectItem(int i);
+    Q_INVOKABLE void goToSlide(int slide);   // within the current part
     Q_INVOKABLE void nextSlide();
     Q_INVOKABLE void prevSlide();
     Q_INVOKABLE void startService();
@@ -96,6 +104,7 @@ public:
 signals:
     void serviceNameChanged();
     void liveChanged();
+    void slidesChanged();   // the list of slides of the current part changed (other part, or edited)
     void blackoutChanged();
     void logoChanged();
     void outputOnChanged();

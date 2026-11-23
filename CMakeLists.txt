@@ -80,4 +80,11 @@ if(BUILD_TESTING)
     target_include_directories(tst_service PRIVATE src)
     target_link_libraries(tst_service PRIVATE Qt6::Test)
     add_test(NAME service COMMAND tst_service)
+    qt_add_executable(tst_presenter tests/tst_presenter.cpp
+        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/bible.cpp
+        src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp)
+    qt_add_resources(tst_presenter "bible_data" PREFIX "/" FILES data/bible_svv.json)
+    target_include_directories(tst_presenter PRIVATE src)
+    target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui)
+    add_test(NAME presenter COMMAND tst_presenter)
 endif()

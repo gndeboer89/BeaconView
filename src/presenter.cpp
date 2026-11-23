@@ -95,34 +95,66 @@ QString Presenter::nextBackground() const {
     return backgroundOf(m_slide + 1 < slideCount() ? m_item : m_item + 1);
 }
 
+QStringList Presenter::currentSlides() const {
+    const ServiceItem *it = m_service.item(m_item);
+    if (!it) return {};
+    return it->slides.isEmpty() ? QStringList{it->title} : it->slides;
+}
+
+QStringList Presenter::currentRefs() const {
+    QStringList refs;
+    for (int i = 0, n = currentSlides().size(); i < n; ++i) refs << refAt(m_item, i);
+    return refs;
+}
+
+QString Presenter::currentTitle() const {
+    const ServiceItem *it = m_service.item(m_item);
+    if (!it) return {};
+    return it->subtitle.isEmpty() ? it->title : it->title + QStringLiteral(" – ") + it->subtitle;
+}
+
 void Presenter::selectItem(int i) {
     if (!m_service.item(i)) return;
+    const bool otherItem = i != m_item;
     m_item = i;
     m_slide = 0;
+    if (otherItem) emit slidesChanged();
+    emit liveChanged();
+}
+
+void Presenter::goToSlide(int slide) {
+    if (slide < 0 || slide >= slideCount() || slide == m_slide) return;
+    m_slide = slide;
     emit liveChanged();
 }
 
 void Presenter::nextSlide() {
+    bool otherItem = false;
     if (m_slide + 1 < slideCount()) {
         ++m_slide;
     } else if (m_service.item(m_item + 1)) {
         ++m_item;
         m_slide = 0;
+        otherItem = true;
     } else {
         return;
     }
+    if (otherItem) emit slidesChanged();
     emit liveChanged();
 }
 
 void Presenter::prevSlide() {
+    bool otherItem = false;
     if (m_slide > 0) {
         --m_slide;
     } else if (m_item > 0) {
         --m_item;
         m_slide = slideCount() - 1;
+        otherItem = true;
     } else {
         return;
     }
+    if (otherItem) emit slidesChanged();
     emit liveChanged();
 }
 
@@ -136,6 +168,7 @@ void Presenter::startService() {
 void Presenter::onModelChanged() {
     if (m_item >= m_service.count()) m_item = qMax(0, m_service.count() - 1);
     if (m_slide >= slideCount()) m_slide = qMax(0, slideCount() - 1);
+    emit slidesChanged();
     emit liveChanged();
     scheduleSave();
 }
