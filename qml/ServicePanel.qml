@@ -1,0 +1,115 @@
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls.Basic
+import "Theme.js" as T
+
+Rectangle {
+    id: root
+    color: T.panel; radius: 12; border.color: T.border
+    property int editIndex: -1
+    readonly property var kinds: [
+        { kind: "welcome", title: "Welkom" }, { kind: "prayer", title: "Gebed" },
+        { kind: "scripture", title: "Schriftlezing" }, { kind: "sermon", title: "Verkondiging" },
+        { kind: "offering", title: "Collecte" }, { kind: "blessing", title: "Zegen" },
+        { kind: "custom", title: "Eigen tekst…" }
+    ]
+    function glyph(k) { return k === "song" ? "♪" : k === "scripture" ? "▤" : "●" }
+
+    ColumnLayout {
+        anchors.fill: parent; anchors.margins: 14; spacing: 12
+
+        TextField {
+            Layout.fillWidth: true
+            text: presenter.serviceName
+            onEditingFinished: presenter.serviceName = text
+            color: T.text; font.pixelSize: 20; font.bold: true; selectByMouse: true
+            background: Rectangle { color: "transparent"; border.color: parent.activeFocus ? T.accent : "transparent"; radius: 6 }
+        }
+        RowLayout {
+            Layout.fillWidth: true; spacing: 8
+            AppButton { Layout.fillWidth: true; text: "▶  Start dienst"; primary: true; implicitHeight: 46
+                onClicked: presenter.startService() }
+            AppButton { text: "Opslaan"; implicitHeight: 46; onClicked: presenter.save() }
+        }
+        Text {
+            visible: presenter.lastSaved !== ""
+            text: "Opgeslagen om " + presenter.lastSaved
+            color: T.muted; font.pixelSize: 11
+        }
+        Rectangle { Layout.fillWidth: true; height: 1; color: T.border }
+
+        ListView {
+            id: list
+            Layout.fillWidth: true; Layout.fillHeight: true
+            clip: true; spacing: 4
+            model: presenter.service
+            ScrollBar.vertical: ScrollBar {}
+            delegate: Rectangle {
+                width: list.width - 8; height: 56; radius: 8
+                readonly property bool live: index === presenter.currentItem
+                color: live ? T.accentSoft : (hover.hovered ? T.card : "transparent")
+                border.color: live ? T.accent : "transparent"
+                HoverHandler { id: hover }
+                TapHandler { onTapped: presenter.selectItem(index); onDoubleTapped: openEditor(index) }
+                RowLayout {
+                    anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 6; spacing: 12
+                    Text { text: root.glyph(kind); color: live ? T.accent : T.muted; font.pixelSize: 20; Layout.preferredWidth: 22 }
+                    ColumnLayout {
+                        Layout.fillWidth: true; spacing: 0
+                        Text { text: title; color: T.text; font.pixelSize: 15; elide: Text.ElideRight; Layout.fillWidth: true }
+                        Text { visible: subtitle !== ""; text: subtitle; color: T.muted; font.pixelSize: 13; elide: Text.ElideRight; Layout.fillWidth: true }
+                    }
+                    AppButton { text: "⋮"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
+                        onClicked: { itemMenu.idx = index; itemMenu.popup() } }
+                }
+            }
+        }
+
+        AppButton {
+            Layout.fillWidth: true; text: "+  Onderdeel toevoegen"
+            onClicked: addMenu.popup()
+        }
+    }
+
+    function openEditor(i) {
+        editIndex = i
+        var it = presenter.service
+        editor.heading = "Onderdeel bewerken"
+        editor.openWith(it.data(it.index(i, 0), 258), it.data(it.index(i, 0), 259), presenter.itemText(i))
+    }
+
+    Menu {
+        id: itemMenu
+        property int idx: -1
+        MenuItem { text: "Bewerken…"; onTriggered: root.openEditor(itemMenu.idx) }
+        MenuItem { text: "Omhoog"; enabled: itemMenu.idx > 0; onTriggered: presenter.moveItem(itemMenu.idx, -1) }
+        MenuItem { text: "Omlaag"; enabled: itemMenu.idx < presenter.service.rowCount() - 1; onTriggered: presenter.moveItem(itemMenu.idx, 1) }
+        MenuItem { text: "Verwijderen"; onTriggered: presenter.removeItem(itemMenu.idx) }
+    }
+    Menu {
+        id: addMenu
+        Repeater {
+            model: root.kinds
+            MenuItem {
+                text: modelData.title
+                onTriggered: {
+                    if (modelData.kind === "custom") {
+                        root.editIndex = -1
+                        editor.heading = "Nieuw onderdeel"
+                        editor.openWith("", "", "")
+                    } else {
+                        presenter.addItem(modelData.kind, modelData.title, "", modelData.title)
+                    }
+                }
+            }
+        }
+    }
+
+    TextEditorDialog {
+        id: editor
+        onConfirmed: function (t, s, b) {
+            if (root.editIndex >= 0) presenter.editItem(root.editIndex, t, s, b)
+            else presenter.addItem("custom", t, s, b)
+        }
+    }
+}

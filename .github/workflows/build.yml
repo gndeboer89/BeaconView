@@ -1,0 +1,64 @@
+name: Build
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            qt: 6.8.*
+          - os: ubuntu-latest
+            qt: 6.8.*
+          - os: macos-latest
+            qt: 6.10.*   # Qt 6.8.3 fails to link on current macOS SDKs (framework 'AGL' not found)
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt }}
+          cache: true
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory dist | Out-Null
+          Copy-Item build/Release/beaconview.exe dist/
+          windeployqt --qmldir qml dist/beaconview.exe
+          Compress-Archive dist/* BeaconView-Windows.zip
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: macdeployqt build/beaconview.app -qmldir=qml -dmg
+          mv build/beaconview.dmg BeaconView-macOS.dmg
+      - uses: actions/upload-artifact@v4
+        if: runner.os != 'Linux'
+        with:
+          name: beaconview-${{ runner.os }}
+          path: |
+            BeaconView-Windows.zip
+            BeaconView-macOS.dmg
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: BeaconView ${{ github.ref_name }}
+          prerelease: true
+          files: artifacts/*
