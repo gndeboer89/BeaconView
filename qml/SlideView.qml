@@ -11,6 +11,7 @@ Item {
     property bool blackout: false
     property bool showLogo: false
     property bool animated: false
+    property bool showOverlays: false   // timer / clock / message bar (live output + main preview only)
     // Look of the text; defaults to the active template, the template editor overrides it.
     property var tpl: presenter.templates.active
     // Video backgrounds only play where this is true (live output + main preview);
@@ -124,6 +125,12 @@ Item {
             Rectangle { anchors.fill: parent; color: "#101322" }
             Rectangle { width: 70; height: 380; radius: 8; color: "white"; x: 960 - 35; y: 540 - 190 }
             Rectangle { width: 250; height: 70; radius: 8; color: "white"; x: 960 - 125; y: 540 - 120 }
+        }
+
+        Loader {
+            anchors.fill: parent
+            active: root.showOverlays
+            sourceComponent: OverlayLayer { tpl: root.tpl }
         }
 
         Rectangle {

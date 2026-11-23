@@ -8,6 +8,7 @@ Rectangle {
     id: root
     color: T.panel; radius: 12; border.color: T.border
     signal bibleRequested()
+    signal overlaysRequested()
 
     ColumnLayout {
         id: col
@@ -40,6 +41,10 @@ Rectangle {
             Layout.fillWidth: true; columns: 2; rowSpacing: 8; columnSpacing: 8
             AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Zwart scherm"; active: presenter.blackout; onClicked: presenter.blackout = !presenter.blackout }
             AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Logo"; active: presenter.logo; onClicked: presenter.logo = !presenter.logo }
+            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Timer"; active: presenter.overlays.timerShown
+                onClicked: presenter.overlays.timerShown = !presenter.overlays.timerShown }
+            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Overlay"; active: presenter.overlays.messageShown
+                onClicked: presenter.overlays.messageShown ? presenter.overlays.hideMessage() : root.overlaysRequested() }
             AppButton { Layout.fillWidth: true; Layout.columnSpan: 2; Layout.minimumWidth: 0; text: "Bijbeltekst"; onClicked: root.bibleRequested() }
         }
     }

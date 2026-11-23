@@ -5,7 +5,7 @@ import "Theme.js" as T
 
 ApplicationWindow {
     id: win
-    width: 1440; height: 860; minimumWidth: 1280; minimumHeight: 760
+    width: 1440; height: 860; minimumWidth: 1320; minimumHeight: 760
     visible: true
     title: "BeaconView"
     color: T.bg
@@ -72,7 +72,8 @@ ApplicationWindow {
                     SidePanel { id: side; Layout.fillWidth: true; Layout.preferredHeight: 330 }
                 }
                 ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true
-                    onBibleRequested: side.focusBible() }
+                    onBibleRequested: side.focusBible()
+                    onOverlaysRequested: side.tab = 3 }
             }
             Placeholder { title: "Media" ; note: "Mediabibliotheek (video's, afbeeldingen) – komt in een volgende versie. Achtergronden vind je nu rechts in Dienst." }
             TemplatesPage {}

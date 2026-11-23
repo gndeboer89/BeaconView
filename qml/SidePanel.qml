@@ -11,7 +11,7 @@ Rectangle {
     id: root
     color: T.panel; radius: 12; border.color: T.border
     clip: true
-    property int tab: 0   // 0 = media, 1 = liederen, 2 = bijbel
+    property int tab: 0   // 0 = media, 1 = liederen, 2 = bijbel, 3 = overlays
     property int songEdit: -1
     property var bibleResult: ({ ok: false, bookFound: false, error: "", verses: [] })
     property var bibleHits: []
@@ -34,9 +34,9 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true; spacing: 6
             Repeater {
-                model: ["Media", "Liederen", "Bijbel"]
+                model: ["Media", "Liederen", "Bijbel", "Overlays"]
                 AppButton {
-                    Layout.preferredWidth: 84; leftPadding: 8; rightPadding: 8; implicitHeight: 34; text: modelData; active: root.tab === index
+                    Layout.preferredWidth: index === 3 ? 92 : 84; leftPadding: 8; rightPadding: 8; implicitHeight: 34; text: modelData; active: root.tab === index
                     onClicked: index === 2 ? root.focusBible() : root.tab = index
                 }
             }
@@ -186,6 +186,9 @@ Rectangle {
                     }
                 }
             }
+
+            // ---- Overlays ---------------------------------------------------------------
+            OverlayPanel {}
         }
     }
 

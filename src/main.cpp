@@ -30,6 +30,11 @@ int main(int argc, char *argv[]) {
     if (const QString f = cliValue("--import"); !f.isEmpty()) presenter.importMedia(QUrl::fromLocalFile(f));
     // Developer aid: `--background /path/file.mp4` uses a file as default background.
     if (const QString bg = cliValue("--background"); !bg.isEmpty()) presenter.setDefaultBackground(QUrl::fromLocalFile(bg).toString());
+    // Developer aid: `--overlay-demo` shows a 5:00 countdown, the clock and a message.
+    if (args.contains("--overlay-demo")) {
+        auto *o = presenter.overlays();
+        o->setTimerDuration(300); o->setTimerShown(true); o->start(); o->setClockShown(true); o->toggleMessage(1);
+    }
     // Developer aid: `--page N` opens a top-level page (0 = Dienst, 2 = Templates, ...), `--template id` activates a template.
     if (const QString t = cliValue("--template"); !t.isEmpty()) presenter.templates()->setActive(t);
     // Developer aid: `--passage "Psalm 23:1-4"` adds a Bible passage and shows it.

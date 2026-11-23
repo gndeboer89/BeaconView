@@ -15,6 +15,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/presenter.cpp    src/presenter.h
     src/bible.cpp        src/bible.h
     src/templatelibrary.cpp src/templatelibrary.h
+    src/overlaycontroller.cpp src/overlaycontroller.h
 )
 qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
 
@@ -28,6 +29,9 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/PreviewPanel.qml
     qml/ControlPanel.qml
     qml/TemplatesPage.qml
+    qml/OverlayLayer.qml
+    qml/OverlayPanel.qml
+    qml/PromptDialog.qml
     qml/ColorField.qml
     qml/SidePanel.qml
     qml/ScreensPage.qml
@@ -62,4 +66,8 @@ if(BUILD_TESTING)
     target_include_directories(tst_templates PRIVATE src)
     target_link_libraries(tst_templates PRIVATE Qt6::Test)
     add_test(NAME templates COMMAND tst_templates)
+    qt_add_executable(tst_overlays tests/tst_overlays.cpp src/overlaycontroller.cpp src/overlaycontroller.h)
+    target_include_directories(tst_overlays PRIVATE src)
+    target_link_libraries(tst_overlays PRIVATE Qt6::Test)
+    add_test(NAME overlays COMMAND tst_overlays)
 endif()
