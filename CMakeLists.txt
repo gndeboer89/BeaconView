@@ -19,6 +19,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/branding.cpp src/branding.h
 )
 qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
+qt_add_resources(beaconview "assets" PREFIX "/" FILES assets/logo.png)
 
 qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/Main.qml
