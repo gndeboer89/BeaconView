@@ -5,7 +5,7 @@ import "Theme.js" as T
 
 ApplicationWindow {
     id: win
-    width: 1360; height: 820; minimumWidth: 1200; minimumHeight: 700
+    width: 1440; height: 860; minimumWidth: 1280; minimumHeight: 760
     visible: true
     title: "BeaconView"
     color: T.bg
@@ -64,10 +64,14 @@ ApplicationWindow {
 
             RowLayout {
                 spacing: 12
-                ServicePanel { Layout.preferredWidth: 340; Layout.fillHeight: true }
-                PreviewPanel { Layout.fillWidth: true; Layout.fillHeight: true
-                    onBibleRequested: { side.tab = 2; side.focusBible() } }
-                SidePanel { id: side; Layout.preferredWidth: 380; Layout.minimumWidth: 380; Layout.fillHeight: true }
+                ServicePanel { Layout.preferredWidth: 320; Layout.fillHeight: true }
+                ColumnLayout {
+                    Layout.fillWidth: true; Layout.fillHeight: true; spacing: 12
+                    PreviewPanel { Layout.fillWidth: true; Layout.fillHeight: true }
+                    SidePanel { id: side; Layout.fillWidth: true; Layout.preferredHeight: 330 }
+                }
+                ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true
+                    onBibleRequested: side.focusBible() }
             }
             Placeholder { title: "Media" ; note: "Mediabibliotheek (video's, afbeeldingen) – komt in een volgende versie. Achtergronden vind je nu rechts in Dienst." }
             Placeholder { title: "Templates"; note: "Lettertype, kleuren en layout per template – komt in een volgende versie." }

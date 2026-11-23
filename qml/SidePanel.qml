@@ -5,6 +5,8 @@ import QtQuick.Dialogs
 import "Theme.js" as T
 import "Backgrounds.js" as Bg
 
+// Bottom-centre library panel: backgrounds (Media), songs (Liederen) and Bible.
+// Wide and low, so every tab is laid out horizontally.
 Rectangle {
     id: root
     color: T.panel; radius: 12; border.color: T.border
@@ -27,13 +29,26 @@ Rectangle {
     }
 
     ColumnLayout {
-        anchors.fill: parent; anchors.margins: 12; spacing: 12
+        anchors.fill: parent; anchors.margins: 12; spacing: 10
 
         RowLayout {
             Layout.fillWidth: true; spacing: 6
-            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Media"; active: root.tab === 0; onClicked: root.tab = 0 }
-            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Liederen"; active: root.tab === 1; onClicked: root.tab = 1 }
-            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Bijbel"; active: root.tab === 2; onClicked: root.focusBible() }
+            Repeater {
+                model: ["Media", "Liederen", "Bijbel"]
+                AppButton {
+                    Layout.preferredWidth: 84; leftPadding: 8; rightPadding: 8; implicitHeight: 34; text: modelData; active: root.tab === index
+                    onClicked: index === 2 ? root.focusBible() : root.tab = index
+                }
+            }
+            Item { Layout.fillWidth: true }
+            // Context actions of the active tab
+            Switch {
+                id: applyAll; visible: root.tab === 0; text: "Alle onderdelen"
+                contentItem: Text { text: applyAll.text; color: T.muted; font.pixelSize: 13; leftPadding: applyAll.indicator.width + 8; verticalAlignment: Text.AlignVCenter }
+            }
+            AppButton { visible: root.tab === 0; implicitHeight: 34; text: "Importeren…"; onClicked: fileDialog.open() }
+            AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Nieuw lied…"
+                onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "") } }
         }
 
         StackLayout {
@@ -41,142 +56,134 @@ Rectangle {
             currentIndex: root.tab
 
             // ---- Media: backgrounds -------------------------------------------------
-            ColumnLayout {
-                spacing: 10
-                Text { text: "Achtergronden"; color: T.text; font.pixelSize: 15; font.bold: true }
-                Switch { id: applyAll; text: "Voor alle onderdelen gebruiken"
-                    contentItem: Text { text: applyAll.text; color: T.muted; font.pixelSize: 13; leftPadding: applyAll.indicator.width + 8; verticalAlignment: Text.AlignVCenter } }
-                GridView {
-                    id: grid
-                    Layout.fillWidth: true; Layout.fillHeight: true
-                    clip: true; cellWidth: width / 2; cellHeight: (cellWidth - 12) * 9 / 16 + 12
-                    model: Bg.gradients.map(function (g) { return "g:" + g.id }).concat(presenter.mediaFiles)
-                    ScrollBar.vertical: ScrollBar {}
-                    delegate: Item {
-                        width: grid.cellWidth; height: grid.cellHeight
-                        Rectangle {
-                            anchors.fill: parent; anchors.margins: 4; radius: 6; clip: true
-                            color: "transparent"
-                            border.color: presenter.liveBackground === modelData ? T.accent : T.border
-                            border.width: presenter.liveBackground === modelData ? 2 : 1
-                            SlideView { anchors.fill: parent; anchors.margins: 2; background: modelData; text: "" }
-                            TapHandler { onTapped: {
-                                if (applyAll.checked) {
-                                    presenter.defaultBackground = modelData
-                                    for (var i = 0; i < presenter.service.rowCount(); ++i) presenter.setItemBackground(i, "")
-                                } else {
-                                    presenter.setItemBackground(presenter.currentItem, modelData)
-                                }
-                            } }
-                        }
+            GridView {
+                id: grid
+                clip: true; cellWidth: 156; cellHeight: (cellWidth - 12) * 9 / 16 + 12
+                model: Bg.gradients.map(function (g) { return "g:" + g.id }).concat(presenter.mediaFiles)
+                ScrollBar.vertical: ScrollBar {}
+                delegate: Item {
+                    width: grid.cellWidth; height: grid.cellHeight
+                    Rectangle {
+                        anchors.fill: parent; anchors.margins: 4; radius: 6; clip: true
+                        color: "transparent"
+                        border.color: presenter.liveBackground === modelData ? T.accent : T.border
+                        border.width: presenter.liveBackground === modelData ? 2 : 1
+                        SlideView { anchors.fill: parent; anchors.margins: 2; background: modelData; text: "" }
+                        TapHandler { onTapped: {
+                            if (applyAll.checked) {
+                                presenter.defaultBackground = modelData
+                                for (var i = 0; i < presenter.service.rowCount(); ++i) presenter.setItemBackground(i, "")
+                            } else {
+                                presenter.setItemBackground(presenter.currentItem, modelData)
+                            }
+                        } }
                     }
                 }
-                AppButton { Layout.fillWidth: true; text: "Afbeelding importeren…"; onClicked: fileDialog.open() }
             }
 
             // ---- Liederen -------------------------------------------------------------
-            ColumnLayout {
-                spacing: 10
-                Text { text: "Liederen (" + presenter.songs.rowCount() + ")"; color: T.text; font.pixelSize: 15; font.bold: true }
-                ListView {
-                    id: songList
-                    Layout.fillWidth: true; Layout.fillHeight: true
-                    clip: true; spacing: 4
-                    model: presenter.songs
-                    ScrollBar.vertical: ScrollBar {}
-                    delegate: Rectangle {
-                        width: songList.width - 8; height: 52; radius: 8; color: T.card
-                        RowLayout {
-                            anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 6; spacing: 6
-                            Text { Layout.fillWidth: true; text: (number !== "" ? number + "  " : "") + title
-                                color: T.text; font.pixelSize: 14; elide: Text.ElideRight }
-                            AppButton { text: "+"; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
-                                onClicked: presenter.addSong(index) }
-                            AppButton { text: "✎"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
-                                onClicked: { root.songEdit = index; songEditor.heading = "Lied bewerken"
-                                    songEditor.openWith(title, number, lyrics) } }
-                        }
+            ListView {
+                id: songList
+                clip: true; spacing: 4
+                model: presenter.songs
+                ScrollBar.vertical: ScrollBar {}
+                delegate: Rectangle {
+                    width: songList.width - 8; height: 46; radius: 8; color: T.card
+                    RowLayout {
+                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 6; spacing: 6
+                        Text { Layout.fillWidth: true; text: (number !== "" ? number + "  " : "") + title
+                            color: T.text; font.pixelSize: 14; elide: Text.ElideRight }
+                        AppButton { text: "+  Aan dienst"; implicitHeight: 34; onClicked: presenter.addSong(index) }
+                        AppButton { text: "✎"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
+                            onClicked: { root.songEdit = index; songEditor.heading = "Lied bewerken"
+                                songEditor.openWith(title, number, lyrics) } }
                     }
                 }
-                AppButton { Layout.fillWidth: true; text: "Nieuw lied…"
-                    onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "") } }
             }
 
             // ---- Bijbel -----------------------------------------------------------------
-            ColumnLayout {
-                spacing: 8
-                Text { text: "Bijbel (" + presenter.bible.translation + ")"; color: T.text; font.pixelSize: 15; font.bold: true }
-                TextField {
-                    id: refField
-                    Layout.fillWidth: true
-                    placeholderText: "Joh 3:16, Psalm 23:1-3 of een woord"
-                    color: T.text; selectByMouse: true; font.pixelSize: 14
-                    background: Rectangle { color: T.card; radius: 6; border.color: refField.activeFocus ? T.accent : T.border }
-                    onTextChanged: root.refreshBible()
-                    onAccepted: if (root.bibleResult.ok) root.addPassage(true)
-                }
-                RowLayout {
-                    Layout.fillWidth: true; spacing: 6
-                    ComboBox {
-                        id: bookBox
-                        Layout.fillWidth: true; model: presenter.bible.bookNames; font.pixelSize: 13
-                        onActivated: refField.text = presenter.bible.bookName(currentIndex) + " 1"
+            RowLayout {
+                spacing: 14
+
+                ColumnLayout {   // input
+                    Layout.preferredWidth: 290; Layout.maximumWidth: 290; Layout.fillHeight: true
+                    spacing: 6
+                    TextField {
+                        id: refField
+                        Layout.fillWidth: true
+                        placeholderText: "Joh 3:16, Psalm 23:1-3 of een woord"
+                        color: T.text; selectByMouse: true; font.pixelSize: 14
+                        background: Rectangle { color: T.card; radius: 6; border.color: refField.activeFocus ? T.accent : T.border }
+                        onTextChanged: root.refreshBible()
+                        onAccepted: if (root.bibleResult.ok) root.addPassage(true)
                     }
-                    ComboBox {
-                        id: chapterBox
-                        Layout.preferredWidth: 78; font.pixelSize: 13
-                        model: presenter.bible.chapterCount(bookBox.currentIndex)
-                        displayText: currentIndex >= 0 ? String(currentIndex + 1) : ""
-                        delegate: ItemDelegate { width: chapterBox.width; text: index + 1; font.pixelSize: 13; highlighted: chapterBox.highlightedIndex === index }
-                        onActivated: refField.text = presenter.bible.bookName(bookBox.currentIndex) + " " + (currentIndex + 1)
+                    RowLayout {
+                        Layout.fillWidth: true; spacing: 6
+                        ComboBox {
+                            id: bookBox
+                            Layout.fillWidth: true; Layout.minimumWidth: 0; model: presenter.bible.bookNames; font.pixelSize: 13
+                            onActivated: refField.text = presenter.bible.bookName(currentIndex) + " 1"
+                        }
+                        ComboBox {
+                            id: chapterBox
+                            Layout.preferredWidth: 70; font.pixelSize: 13
+                            model: presenter.bible.chapterCount(bookBox.currentIndex)
+                            displayText: currentIndex >= 0 ? String(currentIndex + 1) : ""
+                            delegate: ItemDelegate { width: chapterBox.width; text: index + 1; font.pixelSize: 13; highlighted: chapterBox.highlightedIndex === index }
+                            onActivated: refField.text = presenter.bible.bookName(bookBox.currentIndex) + " " + (currentIndex + 1)
+                        }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true; spacing: 6
+                        Text { text: "Verzen/slide"; color: T.muted; font.pixelSize: 12 }
+                        SpinBox { id: versesPerSlide; from: 1; to: 8; value: 2; font.pixelSize: 13; editable: false; implicitWidth: 110 }
+                        CheckBox { id: showNumbers; checked: true; text: "Nrs."
+                            contentItem: Text { text: showNumbers.text; color: T.muted; font.pixelSize: 12; leftPadding: showNumbers.indicator.width + 4; verticalAlignment: Text.AlignVCenter } }
+                    }
+                    Item { Layout.fillHeight: true }
+                    RowLayout {
+                        Layout.fillWidth: true; spacing: 6
+                        AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; implicitHeight: 36; leftPadding: 8; rightPadding: 8; text: "Toevoegen"; enabled: root.bibleResult.ok; onClicked: root.addPassage(false) }
+                        AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; implicitHeight: 36; leftPadding: 8; rightPadding: 8; text: "Toevoegen + tonen"; primary: true; enabled: root.bibleResult.ok; onClicked: root.addPassage(true) }
                     }
                 }
-                RowLayout {
-                    Layout.fillWidth: true; spacing: 8
-                    Text { text: "Verzen/slide"; color: T.muted; font.pixelSize: 13 }
-                    SpinBox { id: versesPerSlide; from: 1; to: 8; value: 2; font.pixelSize: 13; editable: false }
-                    Item { Layout.fillWidth: true }
-                    CheckBox { id: showNumbers; checked: true; text: "Nrs."
-                        contentItem: Text { text: showNumbers.text; color: T.muted; font.pixelSize: 13; leftPadding: showNumbers.indicator.width + 6; verticalAlignment: Text.AlignVCenter } }
-                }
-                Text {
-                    Layout.fillWidth: true; wrapMode: Text.WordWrap; font.pixelSize: 13
-                    visible: refField.text.trim() !== ""
-                    color: root.bibleResult.ok ? T.ok : (root.bibleResult.bookFound ? T.danger : T.muted)
-                    text: root.bibleResult.ok ? root.bibleResult.label
-                        : root.bibleResult.bookFound ? root.bibleResult.error
-                        : (root.bibleHits.length > 0 ? root.bibleHits.length + (root.bibleHits.length >= 40 ? "+" : "") + " resultaten" : "Geen resultaten")
-                }
-                ListView {
-                    id: verseList
-                    Layout.fillWidth: true; Layout.fillHeight: true
-                    clip: true; spacing: 2
-                    model: root.bibleResult.ok ? root.bibleResult.verses : root.bibleHits
-                    ScrollBar.vertical: ScrollBar {}
-                    delegate: Rectangle {
-                        width: verseList.width - 8
-                        height: col.implicitHeight + 10; radius: 6
-                        color: root.bibleResult.ok ? "transparent" : (hit.hovered ? T.card : "transparent")
-                        HoverHandler { id: hit }
-                        TapHandler { enabled: !root.bibleResult.ok; onTapped: if (modelData.ref !== undefined) refField.text = modelData.ref }
-                        ColumnLayout {
-                            id: col
-                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
-                            anchors.margins: 5; spacing: 2
-                            Text { visible: !root.bibleResult.ok; text: modelData.ref !== undefined ? modelData.ref : ""; color: T.accent; font.pixelSize: 12; font.bold: true }
-                            RowLayout {
-                                Layout.fillWidth: true; spacing: 8
-                                Text { visible: root.bibleResult.ok; text: modelData.n !== undefined ? modelData.n : ""; color: T.accent; font.pixelSize: 13; font.bold: true
-                                    Layout.alignment: Qt.AlignTop; Layout.preferredWidth: 24 }
-                                Text { Layout.fillWidth: true; text: modelData.text; color: T.text; font.pixelSize: 13; wrapMode: Text.WordWrap }
+
+                ColumnLayout {   // verses / search results
+                    Layout.fillWidth: true; Layout.fillHeight: true; spacing: 4
+                    Text {
+                        Layout.fillWidth: true; wrapMode: Text.WordWrap; font.pixelSize: 13
+                        color: root.bibleResult.ok ? T.ok : (root.bibleResult.bookFound ? T.danger : T.muted)
+                        text: refField.text.trim() === "" ? "Bijbel (" + presenter.bible.translation + ") – typ een tekst of zoek een woord"
+                            : root.bibleResult.ok ? root.bibleResult.label
+                            : root.bibleResult.bookFound ? root.bibleResult.error
+                            : (root.bibleHits.length > 0 ? root.bibleHits.length + (root.bibleHits.length >= 40 ? "+" : "") + " resultaten" : "Geen resultaten")
+                    }
+                    ListView {
+                        id: verseList
+                        Layout.fillWidth: true; Layout.fillHeight: true
+                        clip: true; spacing: 2
+                        model: root.bibleResult.ok ? root.bibleResult.verses : root.bibleHits
+                        ScrollBar.vertical: ScrollBar {}
+                        delegate: Rectangle {
+                            width: verseList.width - 8
+                            height: vcol.implicitHeight + 10; radius: 6
+                            color: root.bibleResult.ok ? "transparent" : (hit.hovered ? T.card : "transparent")
+                            HoverHandler { id: hit }
+                            TapHandler { enabled: !root.bibleResult.ok; onTapped: if (modelData.ref !== undefined) refField.text = modelData.ref }
+                            ColumnLayout {
+                                id: vcol
+                                anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+                                anchors.margins: 5; spacing: 2
+                                Text { visible: !root.bibleResult.ok; text: modelData.ref !== undefined ? modelData.ref : ""; color: T.accent; font.pixelSize: 12; font.bold: true }
+                                RowLayout {
+                                    Layout.fillWidth: true; spacing: 8
+                                    Text { visible: root.bibleResult.ok; text: modelData.n !== undefined ? modelData.n : ""; color: T.accent; font.pixelSize: 13; font.bold: true
+                                        Layout.alignment: Qt.AlignTop; Layout.preferredWidth: 24 }
+                                    Text { Layout.fillWidth: true; text: modelData.text; color: T.text; font.pixelSize: 13; wrapMode: Text.WordWrap }
+                                }
                             }
                         }
                     }
-                }
-                RowLayout {
-                    Layout.fillWidth: true; spacing: 6
-                    AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Toevoegen"; enabled: root.bibleResult.ok; onClicked: root.addPassage(false) }
-                    AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Toevoegen + tonen"; primary: true; enabled: root.bibleResult.ok; onClicked: root.addPassage(true) }
                 }
             }
         }
