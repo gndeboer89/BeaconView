@@ -9,6 +9,7 @@ struct ServiceItem {
     QString subtitle;
     QString background;  // "g:<id>" (gradient) or file URL; empty = default
     QStringList slides;
+    QStringList refs;    // optional per-slide reference (e.g. "Psalm 23:1-2"), parallel to slides
 };
 
 // Ordered list of parts ("onderdelen") that make up a church service.

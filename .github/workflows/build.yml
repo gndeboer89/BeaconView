@@ -24,9 +24,12 @@ jobs:
           version: ${{ matrix.qt }}
           cache: true
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=${{ runner.os == 'Linux' && 'ON' || 'OFF' }}
       - name: Build
         run: cmake --build build --config Release
+      - name: Test
+        if: runner.os == 'Linux'
+        run: ctest --test-dir build --output-on-failure
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh

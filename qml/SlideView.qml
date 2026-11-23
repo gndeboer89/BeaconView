@@ -10,10 +10,13 @@ Item {
     property bool blackout: false
     property bool showLogo: false
     property bool animated: false
+    property string reference: ""
     property string shownText: text
+    property string shownRef: reference
     clip: true
 
     onTextChanged: { if (animated) fade.restart(); else shownText = text }
+    onReferenceChanged: { if (animated) fade.restart(); else shownRef = reference }
 
     Rectangle { anchors.fill: parent; color: "black" }
 
@@ -44,22 +47,34 @@ Item {
         Item {
             id: textLayer
             anchors.fill: parent
-            anchors.margins: 140
-            Text {   // soft shadow
-                anchors.fill: parent; anchors.topMargin: 5; anchors.leftMargin: 5
-                text: root.shownText; color: "#99000000"
-                font.pixelSize: 108; font.bold: true; lineHeight: 1.15
-                fontSizeMode: Text.Fit; minimumPixelSize: 40
-                horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap
-            }
-            Text {
+            Item {
                 anchors.fill: parent
-                text: root.shownText; color: "white"
-                font.pixelSize: 108; font.bold: true; lineHeight: 1.15
-                fontSizeMode: Text.Fit; minimumPixelSize: 40
-                horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                wrapMode: Text.WordWrap
+                anchors.margins: 140
+                anchors.bottomMargin: root.shownRef !== "" ? 250 : 140
+                Text {   // soft shadow
+                    x: 5; y: 5; width: parent.width; height: parent.height   // same box as the main text, so Fit picks the same size
+                    text: root.shownText; color: "#99000000"
+                    font.pixelSize: 108; font.bold: true; lineHeight: 1.15
+                    fontSizeMode: Text.Fit; minimumPixelSize: 40
+                    horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                }
+                Text {
+                    anchors.fill: parent
+                    text: root.shownText; color: "white"
+                    font.pixelSize: 108; font.bold: true; lineHeight: 1.15
+                    fontSizeMode: Text.Fit; minimumPixelSize: 40
+                    horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+                    wrapMode: Text.WordWrap
+                }
+            }
+            Text {   // reference, e.g. "Psalm 23:1-2"
+                visible: root.shownRef !== ""
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: 1080 - 200
+                text: root.shownRef; color: "#f0f0f8"
+                font.pixelSize: 56; font.italic: true
+                style: Text.Raised; styleColor: "#99000000"
             }
         }
 
@@ -83,7 +98,7 @@ Item {
     SequentialAnimation {
         id: fade
         NumberAnimation { target: textLayer; property: "opacity"; to: 0; duration: 120 }
-        ScriptAction { script: root.shownText = root.text }
+        ScriptAction { script: { root.shownText = root.text; root.shownRef = root.reference } }
         NumberAnimation { target: textLayer; property: "opacity"; to: 1; duration: 180 }
     }
 }

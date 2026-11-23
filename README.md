@@ -9,6 +9,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster
 - Huidige/volgende slide, zwart scherm, logo, achtergrondkeuze (kleurverlopen of eigen afbeeldingen)
 - Sneltoetsen: → / spatie / PgDn = volgende, ← / PgUp = vorige, **B** = zwart, **L** = logo
+- **Bijbel** (Statenvertaling): typ een verwijzing (`Joh 3:16`, `1 Kor 13:4-7`, `Psalm 23`) of zoek op een woord; kies het aantal verzen per slide en de verwijzing staat onderaan elke slide
 - Automatisch opslaan van dienst en liederen
 
 ## Bouwen
@@ -25,6 +26,14 @@ cmake --build build
 
 De GitHub Actions-workflow in `.github/workflows/build.yml` bouwt voor Windows, macOS en Linux.
 
+## Tests
+```sh
+cmake -S . -B build -DBUILD_TESTING=ON && cmake --build build && ctest --test-dir build --output-on-failure
+```
+
+## Bijbeldata
+Zie `data/README.md` (bron en licentie) en `tools/make_bible.py` (conversie).
+
 ## Nog te doen
-Bijbelmodule, overlays/timer, video-achtergronden, templates (lettertype/kleur), eigen logo,
+Meer bijbelvertalingen (licentie nodig voor NBV21/HSV/BGT), overlays/timer, video-achtergronden, templates (lettertype/kleur), eigen logo,
 importeren van liederen (OpenSong/CCLI), afstandsbediening.

@@ -45,6 +45,7 @@ Window {
     SlideView {
         anchors.fill: parent
         text: presenter.liveText
+        reference: presenter.liveReference
         background: presenter.liveBackground
         blackout: presenter.blackout
         showLogo: presenter.logo

@@ -17,10 +17,16 @@ int main(int argc, char *argv[]) {
     Presenter presenter;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("presenter", &presenter);
+    const QStringList cli = app.arguments();
+    auto cliValue = [&cli](const QString &key) { int i = cli.indexOf(key); return (i >= 0 && i + 1 < cli.size()) ? cli[i + 1] : QString(); };
+    engine.rootContext()->setContextProperty("devTab", cliValue("--tab").isEmpty() ? -1 : cliValue("--tab").toInt());
+    engine.rootContext()->setContextProperty("devQuery", cliValue("--query"));
     engine.load(QUrl("qrc:/qml/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
 
     const QStringList args = app.arguments();
+    // Developer aid: `--passage "Psalm 23:1-4"` adds a Bible passage and shows it.
+    if (const QString ref = cliValue("--passage"); !ref.isEmpty()) presenter.addPassage(ref, 2, true, true);
     // Developer aid: `--demo` starts the service and steps through two slides.
     if (args.contains("--demo")) {
         presenter.startService();

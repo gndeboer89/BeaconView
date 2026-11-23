@@ -43,6 +43,13 @@ QString Presenter::slideAt(int item, int slide) const {
     return (slide >= 0 && slide < it->slides.size()) ? it->slides[slide] : QString();
 }
 
+QString Presenter::refAt(int item, int slide) const {
+    const ServiceItem *it = m_service.item(item);
+    if (!it) return {};
+    if (slide >= 0 && slide < it->refs.size()) return it->refs[slide];
+    return (it->kind == "scripture") ? it->subtitle : QString();
+}
+
 QString Presenter::backgroundOf(int item) const {
     const ServiceItem *it = m_service.item(item);
     return (it && !it->background.isEmpty()) ? it->background : m_defaultBg;
@@ -54,11 +61,17 @@ int Presenter::slideCount() const {
 }
 
 QString Presenter::liveText() const { return slideAt(m_item, m_slide); }
+QString Presenter::liveReference() const { return refAt(m_item, m_slide); }
 QString Presenter::liveBackground() const { return backgroundOf(m_item); }
 
 QString Presenter::nextText() const {
     if (m_slide + 1 < slideCount()) return slideAt(m_item, m_slide + 1);
     return slideAt(m_item + 1, 0);
+}
+
+QString Presenter::nextReference() const {
+    if (m_slide + 1 < slideCount()) return refAt(m_item, m_slide + 1);
+    return refAt(m_item + 1, 0);
 }
 
 QString Presenter::nextBackground() const {
@@ -152,6 +165,18 @@ void Presenter::addSong(int songIndex) {
                       ServiceModel::splitSlides(m_songs.data(idx, SongLibrary::LyricsRole).toString())});
 }
 
+int Presenter::addPassage(const QString &reference, int versesPerSlide, bool verseNumbers, bool show) {
+    const Bible::Passage p = m_bible.parse(reference);
+    const auto slides = m_bible.slides(p, versesPerSlide, verseNumbers);
+    if (slides.isEmpty()) return -1;
+    ServiceItem it{"scripture", "Schriftlezing", m_bible.label(p), {}, {}, {}};
+    for (const auto &s : slides) { it.slides << s.text; it.refs << s.reference; }
+    m_service.append(it);
+    const int idx = m_service.count() - 1;
+    if (show) selectItem(idx);
+    return idx;
+}
+
 void Presenter::editItem(int i, const QString &title, const QString &subtitle, const QString &text) {
     const ServiceItem *old = m_service.item(i);
     if (!old) return;
@@ -159,6 +184,7 @@ void Presenter::editItem(int i, const QString &title, const QString &subtitle, c
     it.title = title;
     it.subtitle = subtitle;
     it.slides = ServiceModel::splitSlides(text);
+    if (it.slides.size() != it.refs.size()) it.refs.clear();  // references only stay valid while slide count is unchanged
     m_service.replace(i, it);
 }
 

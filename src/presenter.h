@@ -3,6 +3,7 @@
 #include <QStringList>
 #include <QTimer>
 #include <QUrl>
+#include "bible.h"
 #include "servicemodel.h"
 #include "songlibrary.h"
 
@@ -12,13 +13,16 @@ class Presenter : public QObject {
     Q_OBJECT
     Q_PROPERTY(ServiceModel *service READ service CONSTANT)
     Q_PROPERTY(SongLibrary *songs READ songs CONSTANT)
+    Q_PROPERTY(Bible *bible READ bible CONSTANT)
     Q_PROPERTY(QString serviceName READ serviceName WRITE setServiceName NOTIFY serviceNameChanged)
     Q_PROPERTY(int currentItem READ currentItem NOTIFY liveChanged)
     Q_PROPERTY(int currentSlide READ currentSlide NOTIFY liveChanged)
     Q_PROPERTY(int slideCount READ slideCount NOTIFY liveChanged)
     Q_PROPERTY(QString liveText READ liveText NOTIFY liveChanged)
     Q_PROPERTY(QString liveBackground READ liveBackground NOTIFY liveChanged)
+    Q_PROPERTY(QString liveReference READ liveReference NOTIFY liveChanged)
     Q_PROPERTY(QString nextText READ nextText NOTIFY liveChanged)
+    Q_PROPERTY(QString nextReference READ nextReference NOTIFY liveChanged)
     Q_PROPERTY(QString nextBackground READ nextBackground NOTIFY liveChanged)
     Q_PROPERTY(bool blackout READ blackout WRITE setBlackout NOTIFY blackoutChanged)
     Q_PROPERTY(bool logo READ logo WRITE setLogo NOTIFY logoChanged)
@@ -32,6 +36,7 @@ public:
 
     ServiceModel *service() { return &m_service; }
     SongLibrary *songs() { return &m_songs; }
+    Bible *bible() { return &m_bible; }
     QString serviceName() const { return m_name; }
     void setServiceName(const QString &n);
     int currentItem() const { return m_item; }
@@ -39,7 +44,9 @@ public:
     int slideCount() const;
     QString liveText() const;
     QString liveBackground() const;
+    QString liveReference() const;
     QString nextText() const;
+    QString nextReference() const;
     QString nextBackground() const;
     bool blackout() const { return m_blackout; }
     void setBlackout(bool b);
@@ -60,6 +67,8 @@ public:
     Q_INVOKABLE void startService();
     Q_INVOKABLE void addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text);
     Q_INVOKABLE void addSong(int songIndex);
+    // Adds a Bible passage as a "scripture" part; returns its index or -1 when the reference is invalid.
+    Q_INVOKABLE int addPassage(const QString &reference, int versesPerSlide, bool verseNumbers, bool show);
     Q_INVOKABLE void editItem(int i, const QString &title, const QString &subtitle, const QString &text);
     Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)
     Q_INVOKABLE void removeItem(int i);
@@ -85,11 +94,13 @@ private:
     void scheduleSave();
     void onModelChanged();
     QString slideAt(int item, int slide) const;
+    QString refAt(int item, int slide) const;
     QString backgroundOf(int item) const;
     QString dataDir() const;
 
     ServiceModel m_service;
     SongLibrary m_songs;
+    Bible m_bible;
     QString m_name = "Kerkdienst – Zondag";
     int m_item = 0, m_slide = 0;
     bool m_blackout = false, m_logo = false, m_outputOn = false;

@@ -5,6 +5,7 @@ import "Theme.js" as T
 
 ColumnLayout {
     spacing: 12
+    signal bibleRequested()
 
     Rectangle {
         Layout.fillWidth: true; Layout.fillHeight: true
@@ -30,7 +31,7 @@ ColumnLayout {
                 SlideView {
                     anchors.centerIn: parent
                     width: Math.min(holder.width, holder.height * 16 / 9); height: width * 9 / 16
-                    text: presenter.liveText; background: presenter.liveBackground
+                    text: presenter.liveText; reference: presenter.liveReference; background: presenter.liveBackground
                     blackout: presenter.blackout; showLogo: presenter.logo; animated: true
                 }
             }
@@ -48,7 +49,7 @@ ColumnLayout {
                 Rectangle {
                     Layout.preferredWidth: 252; Layout.preferredHeight: 144; color: "transparent"
                     border.color: T.accent; border.width: 2; radius: 6
-                    SlideView { anchors.fill: parent; anchors.margins: 3; text: presenter.liveText; background: presenter.liveBackground }
+                    SlideView { anchors.fill: parent; anchors.margins: 3; text: presenter.liveText; reference: presenter.liveReference; background: presenter.liveBackground }
                 }
             }
             ColumnLayout {
@@ -62,7 +63,7 @@ ColumnLayout {
                 Rectangle {
                     Layout.preferredWidth: 252; Layout.preferredHeight: 144; color: "transparent"
                     border.color: T.border; radius: 6
-                    SlideView { anchors.fill: parent; anchors.margins: 3; text: presenter.nextText; background: presenter.nextBackground }
+                    SlideView { anchors.fill: parent; anchors.margins: 3; text: presenter.nextText; reference: presenter.nextReference; background: presenter.nextBackground }
                 }
             }
             Item { Layout.fillWidth: true }
@@ -74,6 +75,7 @@ ColumnLayout {
         AppButton { text: "→  Volgende slide"; primary: true; implicitHeight: 48; onClicked: presenter.nextSlide() }
         AppButton { text: "Zwart scherm"; implicitHeight: 48; active: presenter.blackout; onClicked: presenter.blackout = !presenter.blackout }
         AppButton { text: "Logo"; implicitHeight: 48; active: presenter.logo; onClicked: presenter.logo = !presenter.logo }
+        AppButton { text: "Bijbeltekst"; implicitHeight: 48; onClicked: bibleRequested() }
         Item { Layout.fillWidth: true }
     }
 }

@@ -57,7 +57,8 @@ QJsonArray ServiceModel::toJson() const {
     QJsonArray arr;
     for (const auto &it : m_items) {
         arr.append(QJsonObject{{"kind", it.kind}, {"title", it.title}, {"subtitle", it.subtitle},
-                               {"background", it.background}, {"slides", QJsonArray::fromStringList(it.slides)}});
+                               {"background", it.background}, {"slides", QJsonArray::fromStringList(it.slides)},
+                               {"refs", QJsonArray::fromStringList(it.refs)}});
     }
     return arr;
 }
@@ -68,8 +69,9 @@ void ServiceModel::fromJson(const QJsonArray &arr) {
     for (const auto &v : arr) {
         const QJsonObject o = v.toObject();
         ServiceItem it{o["kind"].toString("custom"), o["title"].toString(), o["subtitle"].toString(),
-                       o["background"].toString(), {}};
+                       o["background"].toString(), {}, {}};
         for (const auto &s : o["slides"].toArray()) it.slides << s.toString();
+        for (const auto &s : o["refs"].toArray()) it.refs << s.toString();
         m_items.append(it);
     }
     endResetModel();
