@@ -12,6 +12,8 @@ Item {
     property bool showLogo: false
     property bool animated: false
     property bool showWatermark: false  // small church logo in a corner (live output + main preview)
+    // Items can be parented here to draw/edit in 1920x1080 slide coordinates (used by the screen editor)
+    property alias editLayer: editLayerItem
     property bool showOverlays: false   // timer / clock / message bar (live output + main preview only)
     // Look of the text; defaults to the active template, the template editor overrides it.
     property var tpl: presenter.templates.active
@@ -121,6 +123,8 @@ Item {
                 style: Text.Raised; styleColor: "#99000000"
             }
         }
+
+        Item { id: editLayerItem; anchors.fill: parent }
 
         // Watermark: the church logo in a corner (hidden behind the logo screen and the black screen)
         Image {

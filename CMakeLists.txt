@@ -42,6 +42,7 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/Backgrounds.js
     qml/Theme.js
     qml/ServicePanel.qml
+    qml/SlideEditor.qml
     qml/PreviewPanel.qml
     qml/ControlPanel.qml
     qml/TemplatesPage.qml

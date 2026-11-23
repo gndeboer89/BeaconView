@@ -59,6 +59,33 @@ private slots:
         QVERIFY(list.count() >= 1);
         QCOMPARE(p.currentSlides().size(), 3);
     }
+    void screenEditorApi() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        const int a = p.addItem("custom", "Eigen", "sub", "");
+        QCOMPARE(a, 0);
+        QCOMPARE(p.addItem("prayer", "Gebed", "", "Gebed"), 1);
+        QVariantMap info = p.itemInfo(a);
+        QCOMPARE(info["kind"].toString(), QStringLiteral("custom"));
+        QCOMPARE(info["slides"].toStringList().size(), 0);
+        QVERIFY(p.itemInfo(9).isEmpty());
+
+        p.editItemSlides(a, "Nieuw", "x", {"een", "", "drie"}, false);
+        info = p.itemInfo(a);
+        QCOMPARE(info["title"].toString(), QStringLiteral("Nieuw"));
+        QCOMPARE(info["slides"].toStringList(), (QStringList{"een", "", "drie"}));   // multi-line text and blank lines survive
+
+        // bible references are only kept when asked for AND the slide count is unchanged
+        p.service()->fromJson(QJsonArray());
+        QCOMPARE(p.addPassage("Psalm 23:1-4", 2, true, false), 0);
+        p.editItemSlides(0, "Schriftlezing", "Psalm 23:1-4", {"x", "y"}, true);
+        QCOMPARE(p.itemInfo(0)["refs"].toStringList(), (QStringList{"Psalm 23:1-2", "Psalm 23:3-4"}));
+        p.editItemSlides(0, "Schriftlezing", "Psalm 23:1-4", {"x", "y"}, false);
+        QVERIFY(p.itemInfo(0)["refs"].toStringList().isEmpty());
+        p.addPassage("Psalm 23:1-4", 2, true, false);
+        p.editItemSlides(1, "Schriftlezing", "", {"x", "y", "z"}, true);               // count changed: refs would be wrong
+        QVERIFY(p.itemInfo(1)["refs"].toStringList().isEmpty());
+    }
     void bibleSlidesCarryReferences() {
         Presenter p;
         p.service()->fromJson(QJsonArray());
