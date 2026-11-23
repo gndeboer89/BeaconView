@@ -14,7 +14,10 @@ Dialog {
     function openWith(text) { field.text = text; open(); field.forceActiveFocus(); field.selectAll() }
 
     modal: true
-    parent: Window.window ? Window.window.contentItem : null
+    // A popup is positioned relative to the item it is declared in. Move it to the window's content item
+    // the first time it opens, so it is centred in the whole window (Window.window is not available on a Dialog itself).
+    property bool reparented: false
+    onAboutToShow: if (!reparented && parent && parent.Window.window) { reparented = true; parent = parent.Window.window.contentItem }
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
     width: 520; padding: 20

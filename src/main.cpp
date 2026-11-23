@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
     auto cliValue = [&cli](const QString &key) { int i = cli.indexOf(key); return (i >= 0 && i + 1 < cli.size()) ? cli[i + 1] : QString(); };
     engine.rootContext()->setContextProperty("devTab", cliValue("--tab").isEmpty() ? -1 : cliValue("--tab").toInt());
     engine.rootContext()->setContextProperty("devQuery", cliValue("--query"));
+    engine.rootContext()->setContextProperty("devEdit", cliValue("--edit").isEmpty() ? -1 : cliValue("--edit").toInt());
     engine.rootContext()->setContextProperty("devLeft", cliValue("--left-mode").isEmpty() ? 0 : cliValue("--left-mode").toInt());
     engine.rootContext()->setContextProperty("devPage", cliValue("--page").isEmpty() ? 0 : cliValue("--page").toInt());
     engine.load(QUrl("qrc:/qml/Main.qml"));

@@ -202,8 +202,27 @@ void Presenter::setDefaultBackground(const QString &b) {
 
 // ---- editing --------------------------------------------------------------
 
-void Presenter::addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text) {
+int Presenter::addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text) {
     m_service.append({kind, title, subtitle, {}, ServiceModel::splitSlides(text)});
+    return m_service.count() - 1;
+}
+
+QVariantMap Presenter::itemInfo(int i) const {
+    const ServiceItem *it = m_service.item(i);
+    if (!it) return {};
+    return {{"kind", it->kind}, {"title", it->title}, {"subtitle", it->subtitle}, {"background", it->background},
+            {"templateId", it->templateId}, {"slides", it->slides}, {"refs", it->refs}};
+}
+
+void Presenter::editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides, bool keepRefs) {
+    const ServiceItem *old = m_service.item(i);
+    if (!old) return;
+    ServiceItem it = *old;
+    it.title = title;
+    it.subtitle = subtitle;
+    if (!(keepRefs && slides.size() == it.refs.size())) it.refs.clear();
+    it.slides = slides;
+    m_service.replace(i, it);
 }
 
 void Presenter::addSong(int songIndex) {

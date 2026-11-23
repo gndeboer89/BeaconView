@@ -5,6 +5,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
 ## Wat werkt nu (v0.0.1.1)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
+- **Schermeditor (WYSIWYG)** voor alle onderdelen behalve liederen: typ direct op het scherm met het gekozen template en de echte achtergrond, voeg slides toe/verplaats/verwijder ze, kies template en achtergrond en zie rechts het exacte resultaat
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster
 - Alle slides van het huidige onderdeel als aanklikbare lijst (klik = die slide live; de lijst scrolt mee), zwart scherm, logo, achtergrondkeuze (kleurverlopen, eigen afbeeldingen of **video's**: mp4/mov/webm/mkv, stil en in een lus)

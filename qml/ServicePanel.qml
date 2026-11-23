@@ -80,12 +80,18 @@ Rectangle {
         }
     }
 
+    // Songs keep the text editor (a blank line starts a new verse); every other part uses the WYSIWYG screen editor.
     function openEditor(i) {
-        editIndex = i
-        var it = presenter.service
-        editor.heading = "Onderdeel bewerken"
-        editor.openWith(it.data(it.index(i, 0), 258), it.data(it.index(i, 0), 259), presenter.itemText(i))
+        var info = presenter.itemInfo(i)
+        if (info.kind === "song") {
+            editIndex = i
+            editor.heading = "Lied bewerken"
+            editor.openWith(info.title, info.subtitle, presenter.itemText(i))
+        } else {
+            slideEditor.openFor(i, false)
+        }
     }
+    Component.onCompleted: if (devEdit >= 0) openEditor(devEdit)   // developer aid: --edit N
 
     Menu {
         id: itemMenu
@@ -123,9 +129,8 @@ Rectangle {
                 text: modelData.title
                 onTriggered: {
                     if (modelData.kind === "custom") {
-                        root.editIndex = -1
-                        editor.heading = "Nieuw onderdeel"
-                        editor.openWith("", "", "")
+                        // add an empty part and edit it on screen; cancelling removes it again
+                        slideEditor.openFor(presenter.addItem("custom", "Eigen tekst", "", ""), true)
                     } else {
                         presenter.addItem(modelData.kind, modelData.title, "", modelData.title)
                     }
@@ -133,6 +138,8 @@ Rectangle {
             }
         }
     }
+
+    SlideEditor { id: slideEditor }
 
     TextEditorDialog {
         id: editor

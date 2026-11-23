@@ -86,11 +86,15 @@ public:
     Q_INVOKABLE void nextSlide();
     Q_INVOKABLE void prevSlide();
     Q_INVOKABLE void startService();
-    Q_INVOKABLE void addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text);
+    Q_INVOKABLE int addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text);   // returns the new index
     Q_INVOKABLE void addSong(int songIndex);
     // Adds a Bible passage as a "scripture" part; returns its index or -1 when the reference is invalid.
     Q_INVOKABLE int addPassage(const QString &reference, int versesPerSlide, bool verseNumbers, bool show);
     Q_INVOKABLE void editItem(int i, const QString &title, const QString &subtitle, const QString &text);
+    // Everything the screen editor needs: {kind, title, subtitle, background, templateId, slides, refs}
+    Q_INVOKABLE QVariantMap itemInfo(int i) const;
+    // Replaces the slides of a part. References (bible) are kept only when keepRefs is set and the slide count is unchanged.
+    Q_INVOKABLE void editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides, bool keepRefs);
     Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)
     Q_INVOKABLE void removeItem(int i);
     Q_INVOKABLE void moveItem(int i, int delta);
