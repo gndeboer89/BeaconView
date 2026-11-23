@@ -1,5 +1,9 @@
 name: Build
-on: [push, pull_request]
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
 jobs:
   build:
     strategy:
@@ -24,13 +28,31 @@ jobs:
           New-Item -ItemType Directory dist | Out-Null
           Copy-Item build/Release/beaconview.exe dist/
           windeployqt --qmldir qml dist/beaconview.exe
+          Compress-Archive dist/* BeaconView-Windows.zip
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: macdeployqt build/beaconview.app -qmldir=qml -dmg
+          mv build/beaconview.dmg BeaconView-macOS.dmg
       - uses: actions/upload-artifact@v4
         if: runner.os != 'Linux'
         with:
           name: beaconview-${{ runner.os }}
           path: |
-            dist/
-            build/beaconview.dmg
+            BeaconView-Windows.zip
+            BeaconView-macOS.dmg
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: BeaconView ${{ github.ref_name }}
+          prerelease: true
+          files: artifacts/*

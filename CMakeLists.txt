@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(BeaconView VERSION 0.1.0 LANGUAGES CXX)
+project(BeaconView VERSION 0.0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,6 +36,7 @@ set_target_properties(beaconview PROPERTIES
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
+target_compile_definitions(beaconview PRIVATE APP_VERSION="${PROJECT_VERSION}")
 target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2)
 
 include(GNUInstallDirs)

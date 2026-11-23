@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     app.setOrganizationName("BeaconView");
     app.setApplicationName("BeaconView");
-    app.setApplicationVersion("0.1.0");
+    app.setApplicationVersion(APP_VERSION);
     // "Basic" is the same on every OS, so the UI looks identical on Windows/macOS/Linux.
     QQuickStyle::setStyle("Basic");
 
