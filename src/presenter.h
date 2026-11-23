@@ -1,0 +1,99 @@
+#pragma once
+#include <QObject>
+#include <QStringList>
+#include <QTimer>
+#include <QUrl>
+#include "servicemodel.h"
+#include "songlibrary.h"
+
+// Central controller: owns the service, the live state shown on the output
+// screen(s) and persistence. Exposed to QML as `presenter`.
+class Presenter : public QObject {
+    Q_OBJECT
+    Q_PROPERTY(ServiceModel *service READ service CONSTANT)
+    Q_PROPERTY(SongLibrary *songs READ songs CONSTANT)
+    Q_PROPERTY(QString serviceName READ serviceName WRITE setServiceName NOTIFY serviceNameChanged)
+    Q_PROPERTY(int currentItem READ currentItem NOTIFY liveChanged)
+    Q_PROPERTY(int currentSlide READ currentSlide NOTIFY liveChanged)
+    Q_PROPERTY(int slideCount READ slideCount NOTIFY liveChanged)
+    Q_PROPERTY(QString liveText READ liveText NOTIFY liveChanged)
+    Q_PROPERTY(QString liveBackground READ liveBackground NOTIFY liveChanged)
+    Q_PROPERTY(QString nextText READ nextText NOTIFY liveChanged)
+    Q_PROPERTY(QString nextBackground READ nextBackground NOTIFY liveChanged)
+    Q_PROPERTY(bool blackout READ blackout WRITE setBlackout NOTIFY blackoutChanged)
+    Q_PROPERTY(bool logo READ logo WRITE setLogo NOTIFY logoChanged)
+    Q_PROPERTY(bool outputOn READ outputOn WRITE setOutputOn NOTIFY outputOnChanged)
+    Q_PROPERTY(QString outputScreen READ outputScreen WRITE setOutputScreen NOTIFY outputScreenChanged)
+    Q_PROPERTY(QString defaultBackground READ defaultBackground WRITE setDefaultBackground NOTIFY defaultBackgroundChanged)
+    Q_PROPERTY(QStringList mediaFiles READ mediaFiles NOTIFY mediaFilesChanged)
+    Q_PROPERTY(QString lastSaved READ lastSaved NOTIFY savedChanged)
+public:
+    explicit Presenter(QObject *parent = nullptr);
+
+    ServiceModel *service() { return &m_service; }
+    SongLibrary *songs() { return &m_songs; }
+    QString serviceName() const { return m_name; }
+    void setServiceName(const QString &n);
+    int currentItem() const { return m_item; }
+    int currentSlide() const { return m_slide; }
+    int slideCount() const;
+    QString liveText() const;
+    QString liveBackground() const;
+    QString nextText() const;
+    QString nextBackground() const;
+    bool blackout() const { return m_blackout; }
+    void setBlackout(bool b);
+    bool logo() const { return m_logo; }
+    void setLogo(bool b);
+    bool outputOn() const { return m_outputOn; }
+    void setOutputOn(bool b);
+    QString outputScreen() const { return m_outputScreen; }
+    void setOutputScreen(const QString &s);
+    QString defaultBackground() const { return m_defaultBg; }
+    void setDefaultBackground(const QString &b);
+    QStringList mediaFiles() const { return m_media; }
+    QString lastSaved() const { return m_lastSaved; }
+
+    Q_INVOKABLE void selectItem(int i);
+    Q_INVOKABLE void nextSlide();
+    Q_INVOKABLE void prevSlide();
+    Q_INVOKABLE void startService();
+    Q_INVOKABLE void addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text);
+    Q_INVOKABLE void addSong(int songIndex);
+    Q_INVOKABLE void editItem(int i, const QString &title, const QString &subtitle, const QString &text);
+    Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)
+    Q_INVOKABLE void removeItem(int i);
+    Q_INVOKABLE void moveItem(int i, int delta);
+    Q_INVOKABLE void setItemBackground(int i, const QString &bg);
+    Q_INVOKABLE void importMedia(const QUrl &file);
+    Q_INVOKABLE void save();
+
+signals:
+    void serviceNameChanged();
+    void liveChanged();
+    void blackoutChanged();
+    void logoChanged();
+    void outputOnChanged();
+    void outputScreenChanged();
+    void defaultBackgroundChanged();
+    void mediaFilesChanged();
+    void savedChanged();
+
+private:
+    void load();
+    void seedDefaultService();
+    void scheduleSave();
+    void onModelChanged();
+    QString slideAt(int item, int slide) const;
+    QString backgroundOf(int item) const;
+    QString dataDir() const;
+
+    ServiceModel m_service;
+    SongLibrary m_songs;
+    QString m_name = "Kerkdienst – Zondag";
+    int m_item = 0, m_slide = 0;
+    bool m_blackout = false, m_logo = false, m_outputOn = false;
+    QString m_outputScreen, m_defaultBg = "g:sunset", m_lastSaved;
+    QStringList m_media;
+    QTimer m_saveTimer;
+};
