@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Multimedia)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Multimedia Svg)
 qt_standard_project_setup()
 
 qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
@@ -16,6 +16,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/bible.cpp        src/bible.h
     src/templatelibrary.cpp src/templatelibrary.h
     src/overlaycontroller.cpp src/overlaycontroller.h
+    src/branding.cpp src/branding.h
 )
 qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
 
@@ -30,6 +31,7 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/ControlPanel.qml
     qml/TemplatesPage.qml
     qml/OverlayLayer.qml
+    qml/SettingsPage.qml
     qml/OverlayPanel.qml
     qml/PromptDialog.qml
     qml/ColorField.qml
@@ -47,7 +49,7 @@ set_target_properties(beaconview PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
 target_compile_definitions(beaconview PRIVATE APP_VERSION="${PROJECT_VERSION}")
-target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia)
+target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg)
 
 include(GNUInstallDirs)
 install(TARGETS beaconview BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -70,4 +72,8 @@ if(BUILD_TESTING)
     target_include_directories(tst_overlays PRIVATE src)
     target_link_libraries(tst_overlays PRIVATE Qt6::Test)
     add_test(NAME overlays COMMAND tst_overlays)
+    qt_add_executable(tst_branding tests/tst_branding.cpp src/branding.cpp src/branding.h)
+    target_include_directories(tst_branding PRIVATE src)
+    target_link_libraries(tst_branding PRIVATE Qt6::Test Qt6::Gui)
+    add_test(NAME branding COMMAND tst_branding)
 endif()

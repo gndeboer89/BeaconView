@@ -28,7 +28,7 @@ Rectangle {
                 anchors.centerIn: parent
                 width: Math.min(holder.width, holder.height * 16 / 9); height: width * 9 / 16
                 text: presenter.liveText; reference: presenter.liveReference; background: presenter.liveBackground
-                blackout: presenter.blackout; showLogo: presenter.logo; animated: true; playVideo: true; showOverlays: true
+                blackout: presenter.blackout; showLogo: presenter.logo; animated: true; playVideo: true; showOverlays: true; showWatermark: true
             }
         }
     }

@@ -11,6 +11,7 @@ Item {
     property bool blackout: false
     property bool showLogo: false
     property bool animated: false
+    property bool showWatermark: false  // small church logo in a corner (live output + main preview)
     property bool showOverlays: false   // timer / clock / message bar (live output + main preview only)
     // Look of the text; defaults to the active template, the template editor overrides it.
     property var tpl: presenter.templates.active
@@ -117,14 +118,44 @@ Item {
             }
         }
 
-        // Built-in logo: a simple cross
+        // Watermark: the church logo in a corner (hidden behind the logo screen and the black screen)
+        Image {
+            readonly property bool on: root.showWatermark && presenter.branding.watermark && presenter.branding.source !== ""
+            readonly property int corner: presenter.branding.corner
+            visible: on
+            source: on ? presenter.branding.source : ""
+            width: 1920 * presenter.branding.watermarkSize; height: width
+            x: (corner % 2 === 0) ? 50 : 1920 - 50 - width
+            y: corner < 2 ? 50 : 1080 - 50 - height
+            horizontalAlignment: corner % 2 === 0 ? Image.AlignLeft : Image.AlignRight
+            verticalAlignment: corner < 2 ? Image.AlignTop : Image.AlignBottom
+            fillMode: Image.PreserveAspectFit
+            sourceSize.width: 512; sourceSize.height: 512
+            opacity: 0.9; asynchronous: true
+        }
+
+        // Logo screen: own logo (or the built-in cross) centred on a solid colour
         Item {
             anchors.fill: parent
             opacity: root.showLogo ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 250 } }
-            Rectangle { anchors.fill: parent; color: "#101322" }
-            Rectangle { width: 70; height: 380; radius: 8; color: "white"; x: 960 - 35; y: 540 - 190 }
-            Rectangle { width: 250; height: 70; radius: 8; color: "white"; x: 960 - 125; y: 540 - 120 }
+            Rectangle { anchors.fill: parent; color: presenter.branding.bgColor }
+            Image {
+                visible: presenter.branding.source !== ""
+                anchors.centerIn: parent
+                width: 1920 * presenter.branding.scale; height: 1080 * presenter.branding.scale
+                source: visible ? presenter.branding.source : ""
+                fillMode: Image.PreserveAspectFit
+                sourceSize.width: 1920; sourceSize.height: 1080
+                asynchronous: true
+            }
+            Item {   // built-in cross
+                visible: presenter.branding.source === ""
+                anchors.centerIn: parent
+                scale: presenter.branding.scale / 0.6
+                Rectangle { width: 70; height: 380; radius: 8; color: "white"; x: -35; y: -190 }
+                Rectangle { width: 250; height: 70; radius: 8; color: "white"; x: -125; y: -120 }
+            }
         }
 
         Loader {

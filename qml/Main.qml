@@ -78,7 +78,7 @@ ApplicationWindow {
             Placeholder { title: "Media" ; note: "Mediabibliotheek (video's, afbeeldingen) – komt in een volgende versie. Achtergronden vind je nu rechts in Dienst." }
             TemplatesPage {}
             ScreensPage {}
-            Placeholder { title: "Instellingen" }
+            SettingsPage {}
         }
     }
 }

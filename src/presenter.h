@@ -4,6 +4,7 @@
 #include <QTimer>
 #include <QUrl>
 #include "bible.h"
+#include "branding.h"
 #include "overlaycontroller.h"
 #include "servicemodel.h"
 #include "songlibrary.h"
@@ -18,6 +19,7 @@ class Presenter : public QObject {
     Q_PROPERTY(Bible *bible READ bible CONSTANT)
     Q_PROPERTY(TemplateLibrary *templates READ templates CONSTANT)
     Q_PROPERTY(OverlayController *overlays READ overlays CONSTANT)
+    Q_PROPERTY(Branding *branding READ branding CONSTANT)
     Q_PROPERTY(QString serviceName READ serviceName WRITE setServiceName NOTIFY serviceNameChanged)
     Q_PROPERTY(int currentItem READ currentItem NOTIFY liveChanged)
     Q_PROPERTY(int currentSlide READ currentSlide NOTIFY liveChanged)
@@ -43,6 +45,7 @@ public:
     Bible *bible() { return &m_bible; }
     TemplateLibrary *templates() { return &m_templates; }
     OverlayController *overlays() { return &m_overlays; }
+    Branding *branding() { return &m_branding; }
     QString serviceName() const { return m_name; }
     void setServiceName(const QString &n);
     int currentItem() const { return m_item; }
@@ -109,6 +112,7 @@ private:
     Bible m_bible;
     TemplateLibrary m_templates;
     OverlayController m_overlays;
+    Branding m_branding;
     QString m_name = "Kerkdienst – Zondag";
     int m_item = 0, m_slide = 0;
     bool m_blackout = false, m_logo = false, m_outputOn = false;

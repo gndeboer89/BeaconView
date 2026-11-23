@@ -52,6 +52,7 @@ Window {
         animated: true
         playVideo: true
         showOverlays: true
+        showWatermark: true
     }
     MouseArea { anchors.fill: parent; cursorShape: win.singleScreen ? Qt.ArrowCursor : Qt.BlankCursor }
 }

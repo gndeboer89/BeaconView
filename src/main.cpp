@@ -35,6 +35,11 @@ int main(int argc, char *argv[]) {
         auto *o = presenter.overlays();
         o->setTimerDuration(300); o->setTimerShown(true); o->start(); o->setClockShown(true); o->toggleMessage(1);
     }
+    // Developer aid: `--logo file.png [--watermark]` sets the church logo.
+    if (const QString f = cliValue("--logo"); !f.isEmpty()) {
+        presenter.branding()->chooseLogo(QUrl::fromLocalFile(f));
+        if (args.contains("--watermark")) presenter.branding()->setWatermark(true);
+    }
     // Developer aid: `--page N` opens a top-level page (0 = Dienst, 2 = Templates, ...), `--template id` activates a template.
     if (const QString t = cliValue("--template"); !t.isEmpty()) presenter.templates()->setActive(t);
     // Developer aid: `--passage "Psalm 23:1-4"` adds a Bible passage and shows it.
