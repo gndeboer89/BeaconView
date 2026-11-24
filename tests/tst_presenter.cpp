@@ -105,6 +105,7 @@ private slots:
         p.nextSlide();                                           // every kind of slide change shows the text again
         QVERIFY(!p.textHidden());
         p.setTextHidden(true); p.goToSlide(0); QVERIFY(!p.textHidden());
+        p.setTextHidden(true); p.goToSlide(0); QVERIFY(!p.textHidden());   // clicking the slide that is already live brings the text back
         p.setTextHidden(true); p.prevSlide();  QVERIFY(p.textHidden());    // already on the very first slide: nothing changes, so the text stays hidden
         p.setTextHidden(true); p.selectItem(1); QVERIFY(!p.textHidden());
         p.setTextHidden(true); p.prevSlide();   QVERIFY(!p.textHidden());  // back into the previous part

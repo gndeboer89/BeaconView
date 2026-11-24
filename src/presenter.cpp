@@ -195,7 +195,11 @@ void Presenter::loopTick() {
 }
 
 void Presenter::goToSlide(int slide) {
-    if (slide < 0 || slide >= slideCount() || slide == m_slide) return;
+    if (slide < 0 || slide >= slideCount()) return;
+    if (slide == m_slide) {          // the slide that is already live: just bring the text back
+        setTextHidden(false);
+        return;
+    }
     m_slide = slide;
     setTextHidden(false);
     emit liveChanged();
