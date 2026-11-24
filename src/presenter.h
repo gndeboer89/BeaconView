@@ -49,6 +49,8 @@ class Presenter : public QObject {
     Q_PROPERTY(QString nextBackground READ nextBackground NOTIFY liveChanged)
     Q_PROPERTY(bool blackout READ blackout WRITE setBlackout NOTIFY blackoutChanged)
     Q_PROPERTY(bool logo READ logo WRITE setLogo NOTIFY logoChanged)
+    // Hides the text (and bible reference) but keeps the background; shows again on the next slide.
+    Q_PROPERTY(bool textHidden READ textHidden WRITE setTextHidden NOTIFY textHiddenChanged)
     Q_PROPERTY(bool outputOn READ outputOn WRITE setOutputOn NOTIFY outputOnChanged)
     Q_PROPERTY(QString outputScreen READ outputScreen WRITE setOutputScreen NOTIFY outputScreenChanged)
     Q_PROPERTY(QString defaultBackground READ defaultBackground WRITE setDefaultBackground NOTIFY defaultBackgroundChanged)
@@ -94,6 +96,8 @@ public:
     QString nextBackground() const;
     bool blackout() const { return m_blackout; }
     void setBlackout(bool b);
+    bool textHidden() const { return m_textHidden; }
+    void setTextHidden(bool hidden);
     bool logo() const { return m_logo; }
     void setLogo(bool b);
     bool outputOn() const { return m_outputOn; }
@@ -143,6 +147,7 @@ signals:
     void slidesChanged();   // the list of slides of the current part changed (other part, or edited)
     void blackoutChanged();
     void logoChanged();
+    void textHiddenChanged();
     void outputOnChanged();
     void outputScreenChanged();
     void defaultBackgroundChanged();
@@ -172,6 +177,7 @@ private:
     SlideImporter m_importer;
     QString m_name = "Kerkdienst – Zondag";
     int m_item = 0, m_slide = 0;
+    bool m_textHidden = false;
     bool m_blackout = false, m_logo = false, m_outputOn = false;
     QString m_outputScreen, m_defaultBg = "g:sunset", m_lastSaved;
     QStringList m_media;

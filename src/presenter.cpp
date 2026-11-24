@@ -141,6 +141,7 @@ void Presenter::selectItem(int i) {
     const bool otherItem = i != m_item;
     m_item = i;
     m_slide = 0;
+    setTextHidden(false);                     // a new slide shows its text again
     announceItemChange(otherItem);
     emit liveChanged();
     updateLoop();
@@ -168,12 +169,14 @@ void Presenter::updateLoop() {
 void Presenter::loopTick() {
     if (slideCount() < 2) return;
     m_slide = (m_slide + 1) % slideCount();     // the automatic loop wraps around; manual "next" leaves the part
+    setTextHidden(false);
     emit liveChanged();
 }
 
 void Presenter::goToSlide(int slide) {
     if (slide < 0 || slide >= slideCount() || slide == m_slide) return;
     m_slide = slide;
+    setTextHidden(false);
     emit liveChanged();
     updateLoop();    // a manual jump restarts the interval
 }
@@ -189,6 +192,7 @@ void Presenter::nextSlide() {
     } else {
         return;
     }
+    setTextHidden(false);
     announceItemChange(otherItem);
     emit liveChanged();
     updateLoop();
@@ -205,6 +209,7 @@ void Presenter::prevSlide() {
     } else {
         return;
     }
+    setTextHidden(false);
     announceItemChange(otherItem);
     emit liveChanged();
     updateLoop();
@@ -235,6 +240,12 @@ void Presenter::setServiceName(const QString &n) {
     scheduleSave();
 }
 void Presenter::setBlackout(bool b) { if (b != m_blackout) { m_blackout = b; emit blackoutChanged(); } }
+void Presenter::setTextHidden(bool hidden) {
+    if (hidden == m_textHidden) return;
+    m_textHidden = hidden;
+    emit textHiddenChanged();
+}
+
 void Presenter::setLogo(bool b) { if (b != m_logo) { m_logo = b; emit logoChanged(); } }
 void Presenter::setOutputOn(bool b) { if (b != m_outputOn) { m_outputOn = b; emit outputOnChanged(); } }
 

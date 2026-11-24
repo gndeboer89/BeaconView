@@ -72,7 +72,9 @@ Rectangle {
                             Image { anchors.fill: parent; source: row.img !== "" ? row.img : ""; fillMode: Image.PreserveAspectFit
                                 sourceSize.height: 200; asynchronous: true }
                         }
-                        Text { visible: row.img === "" || modelData !== ""; Layout.fillWidth: true; text: modelData; color: T.text; font.pixelSize: 13
+                        Text { visible: row.img === "" || modelData !== ""; Layout.fillWidth: true
+                            text: modelData !== "" ? modelData : "Leeg: alleen de achtergrond"
+                            color: modelData !== "" ? T.text : T.muted; font.italic: modelData === ""; font.pixelSize: 13
                             wrapMode: Text.WordWrap; maximumLineCount: 8; elide: Text.ElideRight }
                         Text { visible: text !== ""; Layout.fillWidth: true; color: T.muted; font.pixelSize: 11
                             text: presenter.currentRefs[index] !== undefined ? presenter.currentRefs[index] : "" }
@@ -156,7 +158,9 @@ Rectangle {
                 onClicked: presenter.overlays.timerShown = !presenter.overlays.timerShown }
             AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Overlay"; active: presenter.overlays.messageShown
                 onClicked: presenter.overlays.messageShown ? presenter.overlays.hideMessage() : root.overlaysRequested() }
-            AppButton { Layout.fillWidth: true; Layout.columnSpan: 2; Layout.minimumWidth: 0; text: "Bijbeltekst"; onClicked: root.bibleRequested() }
+            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Bijbeltekst"; onClicked: root.bibleRequested() }
+            AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; text: "Geen tekst"; active: presenter.textHidden
+                onClicked: presenter.textHidden = !presenter.textHidden }
         }
     }
 }

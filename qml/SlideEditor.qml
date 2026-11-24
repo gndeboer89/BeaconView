@@ -60,8 +60,8 @@ Dialog {
     function save() {
         var arr = [], imgs = []
         for (var k = 0; k < slidesModel.count; ++k) {
-            var t = slidesModel.get(k).text, im = slidesModel.get(k).image || ""
-            if (t.trim() !== "" || im !== "") { arr.push(t); imgs.push(im) }   // empty slides are dropped
+            // An empty slide is a real slide: it shows only the background. Delete it with the ✕ button if you do not want it.
+            arr.push(slidesModel.get(k).text); imgs.push(slidesModel.get(k).image || "")
         }
         var keep = hasRefs && !structureChanged && arr.length === slidesModel.count
         var title = titleField.text.trim() !== "" ? titleField.text.trim() : "Onderdeel"
@@ -211,7 +211,7 @@ Dialog {
                 }
                 Text {
                     Layout.fillWidth: true; color: T.muted; font.pixelSize: 11; wrapMode: Text.WordWrap
-                    text: "Typ direct op het scherm. Enter = nieuwe regel op dezelfde slide. De regelafstand kan hier iets afwijken; het voorbeeld rechts toont het exacte resultaat."
+                    text: "Typ direct op het scherm. Enter = nieuwe regel op dezelfde slide. Een lege slide toont alleen de achtergrond. De regelafstand kan hier iets afwijken; het voorbeeld rechts toont het exacte resultaat."
                 }
             }
 

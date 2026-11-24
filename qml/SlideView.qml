@@ -12,6 +12,7 @@ Item {
     property bool showLogo: false
     property bool animated: false
     property bool showLiveVideo: false   // draw the video of the live part (output window + main preview only)
+    property bool textHidden: false      // hide the text and reference, keep the background (live output + main preview)
     property string image: ""            // image slide (PowerPoint/PDF/picture): shown full screen on black
     readonly property bool hasImage: image !== ""
     readonly property bool liveVideoOn: showLiveVideo && presenter.liveVideo !== ""
@@ -114,6 +115,8 @@ Item {
                 anchors.fill: parent
                 anchors.margins: root.shownTpl.margin
                 anchors.bottomMargin: root.shownRef !== "" ? Math.max(root.shownTpl.margin, 250) : root.shownTpl.margin
+                opacity: root.textHidden ? 0 : 1
+                Behavior on opacity { NumberAnimation { duration: 200 } }
                 Repeater {
                     model: root.shownTpl.shadow ? 2 : 1     // first a soft shadow copy, then the text itself
                     Text {
@@ -136,6 +139,8 @@ Item {
             }
             Text {   // reference, e.g. "Psalm 23:1-2"
                 visible: root.shownRef !== ""
+                opacity: root.textHidden ? 0 : 1
+                Behavior on opacity { NumberAnimation { duration: 200 } }
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: 1080 - 100 - height
                 text: root.shownRef; color: root.shownTpl.refColor

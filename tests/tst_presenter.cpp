@@ -86,6 +86,40 @@ private slots:
         p.editItemSlides(1, "Schriftlezing", "", {"x", "y", "z"}, {}, 0, true);               // count changed: refs would be wrong
         QVERIFY(p.itemInfo(1)["refs"].toStringList().isEmpty());
     }
+    void hideTextKeepsTheBackground() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        p.addItem("prayer", "Gebed", "", "een\n\ntwee");
+        p.addItem("prayer", "Zegen", "", "zegen");
+        p.selectItem(0);
+        QSignalSpy spy(&p, &Presenter::textHiddenChanged);
+        QVERIFY(!p.textHidden());
+        p.setTextHidden(true);
+        QVERIFY(p.textHidden());
+        QCOMPARE(p.liveText(), QStringLiteral("een"));           // the slide itself is untouched, only its display is hidden
+        p.setTextHidden(true);
+        QCOMPARE(spy.count(), 1);                                // no duplicate signal
+
+        p.nextSlide();                                           // every kind of slide change shows the text again
+        QVERIFY(!p.textHidden());
+        p.setTextHidden(true); p.goToSlide(0); QVERIFY(!p.textHidden());
+        p.setTextHidden(true); p.prevSlide();  QVERIFY(p.textHidden());    // already on the very first slide: nothing changes, so the text stays hidden
+        p.setTextHidden(true); p.selectItem(1); QVERIFY(!p.textHidden());
+        p.setTextHidden(true); p.prevSlide();   QVERIFY(!p.textHidden());  // back into the previous part
+    }
+    void blankSlideIsKept() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        const int a = p.addItem("custom", "Stilte", "", "");
+        p.editItemSlides(a, "Stilte", "", {""}, {}, 0, false);     // one explicitly empty slide
+        p.selectItem(a);
+        QCOMPARE(p.slideCount(), 1);
+        QCOMPARE(p.liveText(), QString());                         // blank: the title must NOT show up instead
+        p.editItemSlides(a, "Stilte", "", {"Tekst", "", "Tekst 2"}, {}, 0, false);
+        QCOMPARE(p.itemInfo(a)["slides"].toStringList(), (QStringList{"Tekst", "", "Tekst 2"}));
+        p.goToSlide(1);
+        QCOMPARE(p.liveText(), QString());
+    }
     void imageSlides() {
         Presenter p;
         p.service()->fromJson(QJsonArray());
