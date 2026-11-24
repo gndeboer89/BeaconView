@@ -140,6 +140,7 @@ public:
     Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)
     Q_INVOKABLE void removeItem(int i);
     Q_INVOKABLE void moveItem(int i, int delta);
+    Q_INVOKABLE void moveItemTo(int from, int to);     // drag and drop: the part ends up at index `to`
     Q_INVOKABLE void setItemBackground(int i, const QString &bg);
     Q_INVOKABLE void setItemTemplate(int i, const QString &templateId);  // "" = use the active template
     Q_INVOKABLE QString itemTemplate(int i) const;

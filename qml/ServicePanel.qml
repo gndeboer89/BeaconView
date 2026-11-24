@@ -45,15 +45,54 @@ Rectangle {
             clip: true; spacing: 4
             model: presenter.service
             ScrollBar.vertical: ScrollBar {}
-            delegate: Rectangle {
-                width: list.width - 8; height: 56; radius: 8
+
+            // drag and drop: grab the handle on the left and drop the part where it should go
+            readonly property real rowStep: 60          // delegate height (56) + spacing (4)
+            property int dropIndex: -1                   // where the dragged part would land, -1 = nothing is dragged
+            property int dragFrom: -1
+            Rectangle {                                  // drop marker
+                visible: list.dropIndex >= 0 && list.dropIndex !== list.dragFrom
+                x: 0; width: list.width - 8; height: 3; radius: 2; color: T.accent; z: 10
+                y: list.dropIndex > list.dragFrom ? (list.dropIndex + 1) * list.rowStep - 4 : list.dropIndex * list.rowStep - 3
+            }
+
+            delegate: Item {
+                id: row
+                width: list.width - 8; height: 56
                 readonly property bool live: index === presenter.currentItem
-                color: live ? T.accentSoft : (hover.hovered ? T.card : "transparent")
-                border.color: live ? T.accent : "transparent"
+                Rectangle {
+                id: card
+                width: parent.width; height: parent.height; radius: 8
+                z: grip.active ? 5 : 0
+                opacity: grip.active ? 0.85 : 1
+                color: live ? T.accentSoft : (hover.hovered || grip.active ? T.card : "transparent")
+                border.color: live || grip.active ? T.accent : "transparent"
                 HoverHandler { id: hover }
                 TapHandler { onTapped: presenter.selectItem(index); onDoubleTapped: openEditor(index) }
                 RowLayout {
-                    anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 6; spacing: 12
+                    anchors.fill: parent; anchors.leftMargin: 4; anchors.rightMargin: 6; spacing: 8
+                    Item {   // drag handle
+                        Layout.preferredWidth: 22; Layout.fillHeight: true
+                        Text { anchors.centerIn: parent; text: "⋮⋮"; color: gripHover.hovered || grip.active ? T.accent : T.muted; font.pixelSize: 16 }
+                        HoverHandler { id: gripHover; cursorShape: Qt.OpenHandCursor }
+                        DragHandler {
+                            id: grip
+                            target: card
+                            xAxis.enabled: false
+                            yAxis.minimum: -index * list.rowStep
+                            yAxis.maximum: (list.count - 1 - index) * list.rowStep
+                            cursorShape: Qt.ClosedHandCursor
+                            readonly property int dropAt: Math.max(0, Math.min(list.count - 1, Math.round((index * list.rowStep + card.y) / list.rowStep)))
+                            onActiveChanged: {
+                                if (active) { list.dragFrom = index; list.dropIndex = index; return }
+                                const from = index, to = dropAt
+                                list.dragFrom = -1; list.dropIndex = -1
+                                card.y = 0
+                                if (to !== from) presenter.moveItemTo(from, to)
+                            }
+                            onDropAtChanged: if (active) list.dropIndex = dropAt
+                        }
+                    }
                     Text { text: root.glyph(kind); color: live ? T.accent : T.muted; font.pixelSize: 20; Layout.preferredWidth: 22 }
                     ColumnLayout {
                         Layout.fillWidth: true; spacing: 0
@@ -75,6 +114,7 @@ Rectangle {
                     }
                     AppButton { text: "⋮"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
                         onClicked: { itemMenu.idx = index; itemMenu.popup() } }
+                }
                 }
             }
         }

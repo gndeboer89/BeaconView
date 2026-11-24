@@ -390,7 +390,16 @@ QString Presenter::itemText(int i) const {
 }
 
 void Presenter::removeItem(int i) { m_service.remove(i); }
-void Presenter::moveItem(int i, int delta) { m_service.move(i, i + delta); }
+void Presenter::moveItem(int i, int delta) { moveItemTo(i, i + delta); }
+
+void Presenter::moveItemTo(int from, int to) {
+    if (!m_service.item(from) || !m_service.item(to) || from == to) return;
+    // the part that is live stays live, wherever it ends up in the list
+    if (m_item == from) m_item = to;
+    else if (from < m_item && m_item <= to) --m_item;
+    else if (to <= m_item && m_item < from) ++m_item;
+    m_service.move(from, to);
+}
 void Presenter::setItemBackground(int i, const QString &bg) { m_service.setBackground(i, bg); }
 void Presenter::setItemTemplate(int i, const QString &templateId) { m_service.setTemplate(i, templateId); }
 QString Presenter::defaultTemplateName(int i) const {

@@ -110,6 +110,29 @@ private slots:
         p.setTextHidden(true); p.selectItem(1); QVERIFY(!p.textHidden());
         p.setTextHidden(true); p.prevSlide();   QVERIFY(!p.textHidden());  // back into the previous part
     }
+    void dragMoveKeepsLiveItem() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());                      // start without the demo service
+        p.addItem("prayer", "A", "", "a");
+        p.addItem("prayer", "B", "", "b");
+        p.addItem("prayer", "C", "", "c");
+        p.addItem("prayer", "D", "", "d");
+        p.selectItem(1);                                          // B is live
+        p.moveItemTo(0, 3);                                       // A to the end: B moves up, but stays live
+        QCOMPARE(p.currentItem(), 0);
+        QCOMPARE(p.liveText(), QStringLiteral("b"));
+        p.moveItemTo(0, 2);                                       // the live part itself is dragged
+        QCOMPARE(p.currentItem(), 2);
+        QCOMPARE(p.liveText(), QStringLiteral("b"));
+        p.moveItemTo(3, 0);                                       // something from below is dropped above the live part
+        QCOMPARE(p.currentItem(), 3);
+        QCOMPARE(p.liveText(), QStringLiteral("b"));
+        p.moveItem(3, -1);                                        // the menu items use the same code
+        QCOMPARE(p.currentItem(), 2);
+        QCOMPARE(p.liveText(), QStringLiteral("b"));
+        p.moveItemTo(2, 2); p.moveItemTo(2, 9);                   // nothing to do / out of range
+        QCOMPARE(p.currentItem(), 2);
+    }
     void blankSlideIsKept() {
         Presenter p;
         p.service()->fromJson(QJsonArray());
