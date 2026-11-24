@@ -25,6 +25,7 @@ ApplicationWindow {
     Instantiator { model: presenter.extraScreens; delegate: ExtraWindow {} }   // stage and subtitle screens
     Component.onCompleted: {   // developer aid: --tab N --query "Joh 3:16"
         win.page = devPage
+        if (devSong >= 0) { win.page = 1; songsPage.openSong(devSong === 99 ? -1 : devSong) }   // developer aid: --edit-song N (99 = a new song)
         if (devTab >= 0) { side.tab = devTab; if (devQuery !== "") side.setQuery(devQuery) }
     }
 
@@ -52,7 +53,7 @@ ApplicationWindow {
                     smooth: true; mipmap: true
                 }
                 Repeater {
-                    model: ["Dienst", "Media", "Templates", "Schermen", "Instellingen"]
+                    model: ["Dienst", "Liederen", "Media", "Templates", "Schermen", "Rapport", "Instellingen"]
                     AppButton { text: modelData; flat: true; active: win.page === index; implicitHeight: 38
                         onClicked: win.page = index }
                 }
@@ -80,15 +81,18 @@ ApplicationWindow {
                 ColumnLayout {
                     Layout.fillWidth: true; Layout.fillHeight: true; spacing: 12
                     PreviewPanel { Layout.fillWidth: true; Layout.fillHeight: true }
-                    SidePanel { id: side; Layout.fillWidth: true; Layout.preferredHeight: 330 }
+                    SidePanel { id: side; Layout.fillWidth: true; Layout.preferredHeight: 330
+                        onEditSongRequested: function (row) { win.page = 1; songsPage.openSong(row) } }
                 }
                 ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true; video: videoEngine
                     onBibleRequested: side.focusBible()
                     onOverlaysRequested: side.tab = 3 }
             }
+            SongsPage { id: songsPage }
             MediaPage {}
             TemplatesPage {}
             ScreensPage {}
+            ReportPage {}
             SettingsPage {}
         }
     }

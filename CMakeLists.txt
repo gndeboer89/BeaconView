@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(BeaconView VERSION 0.1.3.0 LANGUAGES CXX)
+project(BeaconView VERSION 0.1.4.0 LANGUAGES CXX)
 if(WIN32)
     enable_language(RC)   # for the application icon (assets/beaconview.rc)
 endif()
@@ -18,6 +18,8 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/songimporter.cpp src/songimporter.h
     src/extrascreens.cpp src/extrascreens.h
     src/singleinstance.cpp src/singleinstance.h
+    src/songfilter.cpp src/songfilter.h
+    src/usagelog.cpp src/usagelog.h
     src/presenter.cpp    src/presenter.h
     src/bible.cpp        src/bible.h
     src/templatelibrary.cpp src/templatelibrary.h
@@ -64,6 +66,9 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/ColorField.qml
     qml/SidePanel.qml
     qml/ScreensPage.qml
+    qml/SongsPage.qml
+    qml/SongImport.qml
+    qml/ReportPage.qml
     qml/StageView.qml
     qml/SubtitleView.qml
     qml/ExtraWindow.qml
@@ -111,7 +116,7 @@ if(BUILD_TESTING)
     target_link_libraries(tst_service PRIVATE Qt6::Test)
     add_test(NAME service COMMAND tst_service)
     qt_add_executable(tst_presenter tests/tst_presenter.cpp
-        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/songimporter.cpp src/extrascreens.cpp src/bible.cpp
+        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/songimporter.cpp src/songfilter.cpp src/usagelog.cpp src/extrascreens.cpp src/bible.cpp
         src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp src/slideimporter.cpp)
     qt_add_resources(tst_presenter "bible_data" PREFIX "/" FILES data/bible_svv.json)
     target_include_directories(tst_presenter PRIVATE src)
@@ -129,6 +134,16 @@ if(BUILD_TESTING)
     target_include_directories(tst_singleinstance PRIVATE src)
     target_link_libraries(tst_singleinstance PRIVATE Qt6::Test Qt6::Network)
     add_test(NAME singleinstance COMMAND tst_singleinstance)
+    qt_add_executable(tst_songfilter tests/tst_songfilter.cpp src/songfilter.cpp src/songfilter.h src/songlibrary.cpp src/songlibrary.h
+        src/songimporter.cpp src/songimporter.h)
+    target_include_directories(tst_songfilter PRIVATE src)
+    target_link_libraries(tst_songfilter PRIVATE Qt6::Test Qt6::Core)
+    add_test(NAME songfilter COMMAND tst_songfilter)
+    qt_add_executable(tst_usagelog tests/tst_usagelog.cpp src/usagelog.cpp src/usagelog.h src/songfilter.cpp src/songfilter.h
+        src/songlibrary.cpp src/songlibrary.h src/songimporter.cpp src/songimporter.h)
+    target_include_directories(tst_usagelog PRIVATE src)
+    target_link_libraries(tst_usagelog PRIVATE Qt6::Test Qt6::Core)
+    add_test(NAME usagelog COMMAND tst_usagelog)
     qt_add_executable(tst_importer tests/tst_importer.cpp src/slideimporter.cpp src/slideimporter.h)
     target_include_directories(tst_importer PRIVATE src)
     target_compile_definitions(tst_importer PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")

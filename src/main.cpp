@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("devTab", cliValue("--tab").isEmpty() ? -1 : cliValue("--tab").toInt());
     engine.rootContext()->setContextProperty("devQuery", cliValue("--query"));
     engine.rootContext()->setContextProperty("devEdit", cliValue("--edit").isEmpty() ? -1 : cliValue("--edit").toInt());
+    engine.rootContext()->setContextProperty("devSong", cliValue("--edit-song").isEmpty() ? -1 : cliValue("--edit-song").toInt());   // developer aid: open the editor of library song N
     engine.rootContext()->setContextProperty("devLeft", cliValue("--left-mode").isEmpty() ? 0 : cliValue("--left-mode").toInt());
     engine.rootContext()->setContextProperty("devPage", cliValue("--page").isEmpty() ? 0 : cliValue("--page").toInt());
     engine.load(QUrl("qrc:/qml/Main.qml"));

@@ -12,9 +12,17 @@ Dialog {
     property string subtitleLabel: "Ondertitel"
     property string bodyLabel: "Tekst (een lege regel = nieuwe slide)"
     signal confirmed(string title, string subtitle, string body)
+    // Songs: the order in which the parts ("[Couplet 1]", "[Refrein]") are sung. Empty = as written.
+    property bool showOrder: false
+    property string orderLabel: "Volgorde van de delen"
+    property string resetLabel: ""          // text of the button that puts the order back (hidden when empty)
+    property string resetValue: ""          // ...to this order
+    readonly property string orderValue: orderField.text.trim()
 
-    function openWith(t, s, b) {
+
+    function openWith(t, s, b, order) {
         titleField.text = t; subField.text = s; bodyArea.text = b
+        orderField.text = order !== undefined ? order : ""
         open(); titleField.forceActiveFocus()
     }
 
@@ -25,7 +33,8 @@ Dialog {
     onAboutToShow: if (!reparented && parent && parent.Window.window) { reparented = true; parent = parent.Window.window.contentItem }
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
-    width: 560; height: 520
+    width: 560
+    height: Math.min(showOrder ? 640 : 520, parent ? parent.height - 30 : 520)   // never taller than the window
     padding: 20
     background: Rectangle { color: T.panel; radius: 12; border.color: T.border }
 
@@ -43,6 +52,30 @@ Dialog {
             Layout.fillWidth: true; Layout.fillHeight: true
             TextArea { id: bodyArea; color: T.text; selectByMouse: true; wrapMode: TextEdit.Wrap
                 background: Rectangle { color: T.card; radius: 6; border.color: bodyArea.activeFocus ? T.accent : T.border } }
+        }
+        // order of the parts
+        ColumnLayout {
+            visible: dlg.showOrder; Layout.fillWidth: true; spacing: 6
+            Text { text: dlg.orderLabel; color: T.muted; font.pixelSize: 12; Layout.fillWidth: true; wrapMode: Text.WordWrap }
+            RowLayout {
+                Layout.fillWidth: true; spacing: 8
+                TextField { id: orderField; Layout.fillWidth: true; color: T.text; selectByMouse: true; font.pixelSize: 13
+                    placeholderText: "leeg = de delen zoals ze hierboven staan"
+                    background: Rectangle { color: T.card; radius: 6; border.color: orderField.activeFocus ? T.accent : T.border } }
+                AppButton { visible: dlg.resetLabel !== ""; text: dlg.resetLabel; implicitHeight: 34
+                    onClicked: orderField.text = dlg.resetValue }
+            }
+            Flow {
+                Layout.fillWidth: true; spacing: 6
+                Text { text: "Voeg toe:"; color: T.muted; font.pixelSize: 12; height: 30; verticalAlignment: Text.AlignVCenter
+                    visible: partsRepeater.count > 0 }
+                Repeater {
+                    id: partsRepeater
+                    model: dlg.showOrder ? presenter.partNames(bodyArea.text) : []
+                    AppButton { required property string modelData; text: "+ " + modelData; implicitHeight: 30; leftPadding: 10; rightPadding: 10
+                        onClicked: orderField.text = (orderField.text.trim() === "" ? "" : orderField.text.trim() + ", ") + modelData }
+                }
+            }
         }
         RowLayout {
             Layout.alignment: Qt.AlignRight; spacing: 8

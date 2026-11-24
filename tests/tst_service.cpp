@@ -64,6 +64,36 @@ private slots:
         QCOMPARE(ServiceModel::joinLabeled({"a", "b"}, {"X"}), QStringLiteral("[X]\na\n\nb"));
         QCOMPARE(ServiceModel::splitSlides("[x]\na\n\nb"), (QStringList{"[x]\na", "b"}));
     }
+    void orderOfSongParts() {
+        const QString src = "[Couplet 1]\nregel 1\n\n[Refrein]\nrefrein\n\n[Couplet 2]\nregel 2\n\nzonder naam";
+        QCOMPARE(ServiceModel::parseOrder("Couplet 1, Refrein;Couplet 2\nRefrein , ,"), (QStringList{"Couplet 1", "Refrein", "Couplet 2", "Refrein"}));
+        QCOMPARE(ServiceModel::joinOrder({"A", "B"}), QStringLiteral("A, B"));
+        QCOMPARE(ServiceModel::partNames(src), (QStringList{"Couplet 1", "Refrein", "Couplet 2", "#4"}));   // a part without a name is #position
+
+        QStringList slides, labels;
+        ServiceModel::expandOrder(src, {"couplet 1", "REFREIN", "Couplet  2", "Refrein", "#4"}, &slides, &labels);
+        QCOMPARE(slides, (QStringList{"regel 1", "refrein", "regel 2", "refrein", "zonder naam"}));         // the chorus twice, case does not matter
+        QCOMPARE(labels, (QStringList{"Couplet 1", "Refrein", "Couplet 2", "Refrein", ""}));
+        ServiceModel::expandOrder(src, {"Refrein", "Bestaat niet", "Couplet 1"}, &slides, &labels);         // an unknown name is skipped
+        QCOMPARE(slides, (QStringList{"refrein", "regel 1"}));
+        ServiceModel::expandOrder(src, {}, &slides, &labels);                                             // no order: as written
+        QCOMPARE(slides.size(), 4);
+        ServiceModel::expandOrder(src, {"Onbekend", "Ook niet"}, &slides, &labels);                       // nothing matches: as written, never empty
+        QCOMPARE(slides.size(), 4);
+        ServiceModel::expandOrder(src, {"#9", "#0"}, &slides, &labels);
+        QCOMPARE(slides.size(), 4);
+        // saved and loaded
+        ServiceModel m;
+        ServiceItem it{"song", "Lied", "T", {}, {}};
+        it.source = src; it.order = {"Refrein"}; it.defaultOrder = {"Couplet 1", "Refrein"}; it.ccli = "123"; it.author = "A";
+        m.append(it);
+        ServiceModel copy; copy.fromJson(m.toJson());
+        QCOMPARE(copy.item(0)->source, src);
+        QCOMPARE(copy.item(0)->order, (QStringList{"Refrein"}));
+        QCOMPARE(copy.item(0)->defaultOrder, (QStringList{"Couplet 1", "Refrein"}));
+        QCOMPARE(copy.item(0)->ccli, QStringLiteral("123"));
+        QCOMPARE(copy.item(0)->author, QStringLiteral("A"));
+    }
     void slideNamesAreSaved() {
         ServiceModel m;
         ServiceItem it{"song", "Lied", "T", {}, {"a", "b"}};

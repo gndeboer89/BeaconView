@@ -126,6 +126,93 @@ private slots:
         p.editItemSlides(0, "Lied", "", {"x"}, {}, 0, false);                 // the screen editor does not know names
         QCOMPARE(p.currentLabels(), (QStringList{""}));
     }
+    void songListIsSortedAndSearchable() {
+        Presenter p;
+        p.songs()->add("Zondagslied", "", "tekst");
+        p.songs()->add("Aanbidding", "", "andere tekst");
+        QCOMPARE(p.songFilter()->total(), p.songs()->rowCount());          // the list of the app is the library
+        QCOMPARE(p.songFilter()->rowCount(), p.songs()->rowCount());
+        p.songFilter()->setQuery("aanbidding");
+        QCOMPARE(p.songFilter()->rowCount(), 1);
+        const int src = p.songFilter()->sourceRow(0);
+        p.addSong(src);                                                    // "Aan dienst" uses the row in the library
+        QCOMPARE(p.service()->item(p.service()->count() - 1)->subtitle, QStringLiteral("Aanbidding"));
+    }
+    void songPreviewFollowsTheOrder() {
+        Presenter p;
+        const QVariantList pv = p.songPreview("[Couplet 1]\nregel 1\n\n[Refrein]\nrefrein", "Couplet 1, Refrein, Couplet 1");
+        QCOMPARE(pv.size(), 3);
+        QCOMPARE(pv[1].toMap()["label"].toString(), QStringLiteral("Refrein"));
+        QCOMPARE(pv[2].toMap()["text"].toString(), QStringLiteral("regel 1"));
+        QCOMPARE(p.songPreview("[Couplet 1]\nregel 1\n\n[Refrein]\nrefrein", "").size(), 2);        // no order: as written
+        QVERIFY(p.songPreview("", "x").isEmpty());
+    }
+    void songOrderStandardAndOwn() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        p.songs()->add("Genade", "", "[Couplet 1]\nregel 1\n\n[Refrein]\nrefrein\n\n[Couplet 2]\nregel 2",
+                       "Couplet 1, Refrein, Couplet 2, Refrein");
+        const int song = p.songs()->rowCount() - 1;
+        p.addSong(song);
+        p.selectItem(0);
+        // a new part uses the standard order of the song
+        QCOMPARE(p.currentSlides(), (QStringList{"regel 1", "refrein", "regel 2", "refrein"}));
+        QCOMPARE(p.currentLabels(), (QStringList{"Couplet 1", "Refrein", "Couplet 2", "Refrein"}));
+        QCOMPARE(p.itemOrder(0), QStringLiteral("Couplet 1, Refrein, Couplet 2, Refrein"));
+        QCOMPARE(p.itemDefaultOrder(0), p.itemOrder(0));
+        QCOMPARE(p.itemText(0), QStringLiteral("[Couplet 1]\nregel 1\n\n[Refrein]\nrefrein\n\n[Couplet 2]\nregel 2"));   // the editor gets every part once
+        // an own order for this service only
+        p.editItem(0, "Lied", "Genade", p.itemText(0), "Refrein, Couplet 1, Refrein");
+        QCOMPARE(p.currentSlides(), (QStringList{"refrein", "regel 1", "refrein"}));
+        QCOMPARE(p.itemDefaultOrder(0), QStringLiteral("Couplet 1, Refrein, Couplet 2, Refrein"));   // the standard order is kept
+        QCOMPARE(p.songs()->data(p.songs()->index(song), SongLibrary::OrderRole).toString(), QStringLiteral("Couplet 1, Refrein, Couplet 2, Refrein"));
+        // back to the standard order, and a song without an order
+        p.editItem(0, "Lied", "Genade", p.itemText(0), p.itemDefaultOrder(0));
+        QCOMPARE(p.currentSlides().size(), 4);
+        p.editItem(0, "Lied", "Genade", p.itemText(0), "");
+        QCOMPARE(p.currentSlides(), (QStringList{"regel 1", "refrein", "regel 2"}));
+        // an own order survives saving and loading the service
+        p.editItem(0, "Lied", "Genade", p.itemText(0), "Refrein, Refrein");
+        Presenter q;
+        q.service()->fromJson(p.service()->toJson());
+        QCOMPARE(q.service()->item(0)->slides, (QStringList{"refrein", "refrein"}));
+        QCOMPARE(q.service()->item(0)->order, (QStringList{"Refrein", "Refrein"}));
+        // services from before the order existed still work
+        Presenter r;
+        r.service()->fromJson(QJsonArray{QJsonObject{{"kind", "song"}, {"title", "Lied"}, {"subtitle", "Oud"}, {"slides", QJsonArray{"a", "b"}}}});
+        QCOMPARE(r.itemText(0), QStringLiteral("a\n\nb"));
+        r.editItem(0, "Lied", "Oud", "a\n\nb\n\nc");
+        QCOMPARE(r.service()->item(0)->slides.size(), 3);
+    }
+    void usageIsRecordedWhenShownLive() {
+        QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)).removeRecursively();
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        p.songs()->add("Eerste lied", "", "tekst een");
+        p.songs()->add("Tweede lied", "", "tekst twee");
+        p.addSong(p.songs()->rowCount() - 2);
+        p.addSong(p.songs()->rowCount() - 1);
+        p.addItem("prayer", "Gebed", "", "bidden");
+        const int before = p.usage()->count();
+        p.selectItem(0);                                         // output closed: rehearsing does not count
+        p.selectItem(1);
+        QCOMPARE(p.usage()->count(), before);
+        p.setOutputOn(true);                                     // opening the output: the live song counts
+        QCOMPARE(p.usage()->count(), before + 1);
+        p.selectItem(0);                                         // the first song comes live
+        p.selectItem(0);                                         // ...selecting it again is not a second time
+        p.nextSlide();
+        QCOMPARE(p.usage()->count(), before + 2);
+        p.selectItem(1);                                         // shown again in this session: still once
+        QCOMPARE(p.usage()->count(), before + 2);
+        p.selectItem(2);                                         // a prayer is no song
+        QCOMPARE(p.usage()->count(), before + 2);
+        p.setOutputOn(false);
+        p.setOutputOn(true);                                     // the next service: they count again
+        p.selectItem(0);
+        QCOMPARE(p.usage()->count(), before + 3);
+        QCOMPARE(p.usage()->uses("all") >= 3, true);
+    }
     void dragMoveKeepsLiveItem() {
         Presenter p;
         p.service()->fromJson(QJsonArray());                      // start without the demo service
