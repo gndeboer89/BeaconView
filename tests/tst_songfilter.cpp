@@ -70,6 +70,63 @@ private slots:
         lib.remove(f.sourceRow(0));
         QCOMPARE(f.rowCount(), 0);
     }
+    void categoriesAndTags() {
+        QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)).removeRecursively();
+        QStringList seenMeta;
+        {
+            SongLibrary lib;
+            QSignalSpy meta(&lib, &SongLibrary::metaChanged);
+            lib.add("Stille nacht", "", "t", "", "Liedboek", {"Kerst", "#rust"});
+            lib.add("Ere zij God", "", "t", "", "liedboek ", {"kerst", "  Advent "});     // same bundle and tag, other capitals
+            lib.add("Opwekking 1", "1", "t", "", "Opwekking", {"Pasen", "kerst", "Pasen"});   // a tag twice is one tag
+            lib.add("Zonder niets", "", "t");
+            QVERIFY(meta.count() >= 4);
+            QCOMPARE(lib.categories(), (QStringList{"Liedboek", "Opwekking"}));             // sorted, the first spelling kept
+            QCOMPARE(lib.tags(), (QStringList{"Advent", "Kerst", "Pasen", "rust"}));
+            const int r = lib.rowCount();
+            QCOMPARE(lib.data(lib.index(r - 4), SongLibrary::TagsRole).toStringList(), (QStringList{"Kerst", "rust"}));    // # is dropped
+            QCOMPARE(lib.data(lib.index(r - 3), SongLibrary::CategoryRole).toString(), QStringLiteral("Liedboek"));
+            QCOMPARE(lib.data(lib.index(r - 2), SongLibrary::TagsRole).toStringList(), (QStringList{"Pasen", "Kerst"}));    // given order kept
+            QCOMPARE(SongLibrary::parseTags("kerst, Pasen;  advent\n"), (QStringList{"kerst", "Pasen", "advent"}));
+        }
+        SongLibrary lib;                                                                      // saved and loaded
+        QCOMPARE(lib.categories(), (QStringList{"Liedboek", "Opwekking"}));
+        SongFilter f;
+        f.setSourceModel(&lib);
+        const int all = f.rowCount();
+        f.setCategory("liedboek");
+        QCOMPARE(f.rowCount(), 2);
+        f.setCategory("");
+        f.setTag("KERST");                                                                    // a song can have more than one tag
+        QCOMPARE(f.rowCount(), 3);
+        f.setTag("pasen");
+        QCOMPARE(f.rowCount(), 1);
+        f.setTag("kerst"); f.setCategory("Opwekking");                                         // both filters together
+        QCOMPARE(f.rowCount(), 1);
+        f.setCategory(""); f.setTag("");
+        QCOMPARE(f.rowCount(), all);
+        f.setQuery("advent");                                                                  // the search also finds tags and bundles
+        QCOMPARE(f.rowCount(), 1);
+        f.setQuery("liedboek");
+        QCOMPARE(f.rowCount(), 2);
+        f.setQuery("");
+        // editing and giving to several songs at once
+        const int row = f.sourceRow(0);
+        lib.update(row, "Titel", "", "tekst", "", "Nieuwe bundel", {"nieuw"});
+        QVERIFY(lib.categories().contains("Nieuwe bundel"));
+        QVERIFY(lib.tags().contains("nieuw"));
+        lib.setCategory({0, 1}, "Hillsong");
+        lib.addTag({0, 1, 2}, "Pinksteren");
+        QCOMPARE(lib.data(lib.index(0), SongLibrary::CategoryRole).toString(), QStringLiteral("Hillsong"));
+        QVERIFY(lib.data(lib.index(2), SongLibrary::TagsRole).toStringList().contains("Pinksteren"));
+        lib.addTag({0}, "pinksteren");
+        QCOMPARE(lib.data(lib.index(0), SongLibrary::TagsRole).toStringList().count("Pinksteren"), 1);
+        lib.setCategory({99}, "x");                                                            // out of range: nothing happens
+        QVERIFY(!lib.categories().contains("x"));
+        // a bundle that no song uses any more is gone from the list
+        for (int i = lib.rowCount() - 1; i >= 0; --i) lib.setCategory({i}, "");
+        QVERIFY(lib.categories().isEmpty());
+    }
 };
 QTEST_MAIN(TstSongFilter)
 #include "tst_songfilter.moc"

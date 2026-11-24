@@ -6,12 +6,18 @@
 class SongFilter : public QSortFilterProxyModel {
     Q_OBJECT
     Q_PROPERTY(QString query READ query WRITE setQuery NOTIFY queryChanged)
+    Q_PROPERTY(QString category READ category WRITE setCategory NOTIFY categoryChanged)   // only this bundle ("" = all)
+    Q_PROPERTY(QString tag READ tag WRITE setTag NOTIFY tagChanged)                       // only songs with this tag ("" = all)
     Q_PROPERTY(int total READ total NOTIFY totalChanged)           // songs in the library, whatever the search
 public:
     explicit SongFilter(QObject *parent = nullptr);
     void setSourceModel(QAbstractItemModel *m) override;
     QString query() const { return m_query; }
     void setQuery(const QString &q);
+    QString category() const { return m_category; }
+    void setCategory(const QString &c);
+    QString tag() const { return m_tag; }
+    void setTag(const QString &t);
     int total() const { return sourceModel() ? sourceModel()->rowCount() : 0; }
     // Row in the library (what presenter.addSong and the editor need) for a row of this list.
     Q_INVOKABLE int sourceRow(int row) const;
@@ -19,11 +25,13 @@ public:
     static QString fold(const QString &s);
 signals:
     void queryChanged();
+    void categoryChanged();
+    void tagChanged();
     void totalChanged();
 protected:
     bool filterAcceptsRow(int row, const QModelIndex &parent) const override;
     bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;   // by title, without regard to case and accents
 private:
-    QString m_query;
+    QString m_query, m_category, m_tag;
     QStringList m_words;
 };

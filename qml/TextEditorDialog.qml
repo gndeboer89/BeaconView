@@ -18,10 +18,16 @@ Dialog {
     property string resetLabel: ""          // text of the button that puts the order back (hidden when empty)
     property string resetValue: ""          // ...to this order
     readonly property string orderValue: orderField.text.trim()
+    // Songs: the bundle (one) and the tags (as many as you like), as chosen in the library.
+    property bool showMeta: false
+    readonly property string categoryValue: categoryField.text.trim()
+    readonly property var tagsValue: tagsField.text.split(/[,;\n]/).map(function (t) { return t.trim() }).filter(function (t) { return t !== "" })
 
-    function openWith(t, s, b, order) {
+    function openWith(t, s, b, order, category, tags) {
         titleField.text = t; subField.text = s; bodyArea.text = b
         orderField.text = order !== undefined ? order : ""
+        categoryField.text = category !== undefined ? category : ""
+        tagsField.text = tags !== undefined ? tags.join(", ") : ""
         open(); titleField.forceActiveFocus()
     }
 
@@ -32,7 +38,8 @@ Dialog {
     onAboutToShow: if (!reparented && parent && parent.Window.window) { reparented = true; parent = parent.Window.window.contentItem }
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
-    width: 560; height: showOrder ? 640 : 520
+    width: 560
+    height: Math.min(showOrder ? (showMeta ? 780 : 640) : 520, parent ? parent.height - 30 : 520)   // never taller than the window
     padding: 20
     background: Rectangle { color: T.panel; radius: 12; border.color: T.border }
 
@@ -50,6 +57,40 @@ Dialog {
             Layout.fillWidth: true; Layout.fillHeight: true
             TextArea { id: bodyArea; color: T.text; selectByMouse: true; wrapMode: TextEdit.Wrap
                 background: Rectangle { color: T.card; radius: 6; border.color: bodyArea.activeFocus ? T.accent : T.border } }
+        }
+        // bundle and tags
+        ColumnLayout {
+            visible: dlg.showMeta; Layout.fillWidth: true; spacing: 6
+            Text { text: "Bundel (bijvoorbeeld Opwekking, Hillsong of Liedboek)"; color: T.muted; font.pixelSize: 12 }
+            TextField { id: categoryField; Layout.fillWidth: true; color: T.text; selectByMouse: true; font.pixelSize: 13
+                background: Rectangle { color: T.card; radius: 6; border.color: categoryField.activeFocus ? T.accent : T.border } }
+            Flow {
+                Layout.fillWidth: true; spacing: 6
+                Repeater {
+                    model: dlg.showMeta ? presenter.songs.categories.slice(0, 12) : []
+                    AppButton { required property string modelData; text: modelData; implicitHeight: 28; leftPadding: 10; rightPadding: 10
+                        active: categoryField.text.trim().toLowerCase() === modelData.toLowerCase()
+                        onClicked: categoryField.text = modelData }
+                }
+            }
+            Text { text: "Tags, gescheiden door komma's (bijvoorbeeld Kerst, Pasen)"; color: T.muted; font.pixelSize: 12 }
+            TextField { id: tagsField; Layout.fillWidth: true; color: T.text; selectByMouse: true; font.pixelSize: 13
+                background: Rectangle { color: T.card; radius: 6; border.color: tagsField.activeFocus ? T.accent : T.border } }
+            Flow {
+                Layout.fillWidth: true; spacing: 6
+                Repeater {
+                    model: dlg.showMeta ? presenter.songs.tags.slice(0, 16) : []
+                    AppButton {
+                        required property string modelData
+                        readonly property bool on: dlg.tagsValue.some(function (t) { return t.toLowerCase() === modelData.toLowerCase() })
+                        text: (on ? "✓ " : "+ ") + modelData; implicitHeight: 28; leftPadding: 10; rightPadding: 10; active: on
+                        onClicked: {
+                            var cur = dlg.tagsValue, key = modelData.toLowerCase()
+                            tagsField.text = (on ? cur.filter(function (t) { return t.toLowerCase() !== key }) : cur.concat([modelData])).join(", ")
+                        }
+                    }
+                }
+            }
         }
         // order of the parts
         ColumnLayout {

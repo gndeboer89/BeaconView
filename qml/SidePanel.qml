@@ -17,6 +17,12 @@ Rectangle {
     property var bibleResult: ({ ok: false, bookFound: false, error: "", verses: [] })
     property var bibleHits: []
 
+    Component.onCompleted: if (devSong >= 0 && devSong < presenter.songs.rowCount()) {   // developer aid: --edit-song N
+        var m = presenter.songs
+        root.songEdit = devSong; songEditor.heading = "Lied bewerken"
+        songEditor.openWith(m.data(m.index(devSong, 0), 257), "", m.data(m.index(devSong, 0), 259), m.data(m.index(devSong, 0), 263),
+                            m.data(m.index(devSong, 0), 264), m.data(m.index(devSong, 0), 265))
+    }
     function focusBible() { tab = 2; refField.forceActiveFocus(); refField.selectAll() }
     function setQuery(q) { refField.text = q }
     function refreshBible() {
@@ -50,7 +56,7 @@ Rectangle {
             AppButton { visible: root.tab === 0; implicitHeight: 34; text: "Importeren…"; onClicked: fileDialog.open() }
             AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Importeren…"; onClicked: songImport.open() }
             AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Nieuw lied…"
-                onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "", "") } }
+                onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "", "", "", []) } }
         }
 
         StackLayout {
@@ -91,15 +97,38 @@ Rectangle {
                     TextField {
                         id: songSearch
                         Layout.fillWidth: true; implicitHeight: 34
-                        placeholderText: "Zoek een lied: titel, regel uit de tekst, auteur of CCLI-nummer"
+                        placeholderText: "Zoek een lied: titel, regel uit de tekst, auteur, bundel of tag"
                         color: T.text; selectByMouse: true; font.pixelSize: 13
                         background: Rectangle { color: T.card; radius: 6; border.color: songSearch.activeFocus ? T.accent : T.border }
                         onTextChanged: presenter.songFilter.query = text
                         Keys.onEscapePressed: text = ""
                     }
+                    ComboBox {
+                        id: categoryBox
+                        visible: presenter.songs.categories.length > 0
+                        implicitHeight: 34; implicitWidth: 150; font.pixelSize: 13
+                        model: ["Alle bundels"].concat(presenter.songs.categories)
+                        currentIndex: Math.max(0, model.indexOf(presenter.songFilter.category))
+                        onActivated: presenter.songFilter.category = currentIndex === 0 ? "" : model[currentIndex]
+                    }
+                    ComboBox {
+                        id: tagBox
+                        visible: presenter.songs.tags.length > 0
+                        implicitHeight: 34; implicitWidth: 130; font.pixelSize: 13
+                        model: ["Alle tags"].concat(presenter.songs.tags)
+                        currentIndex: Math.max(0, model.indexOf(presenter.songFilter.tag))
+                        onActivated: presenter.songFilter.tag = currentIndex === 0 ? "" : model[currentIndex]
+                    }
+                    Connections {   // a bundle or tag that no song has any more cannot stay selected
+                        target: presenter.songs
+                        function onMetaChanged() {
+                            if (presenter.songFilter.category !== "" && presenter.songs.categories.indexOf(presenter.songFilter.category) < 0) presenter.songFilter.category = ""
+                            if (presenter.songFilter.tag !== "" && presenter.songs.tags.indexOf(presenter.songFilter.tag) < 0) presenter.songFilter.tag = ""
+                        }
+                    }
                     Text {
                         color: T.muted; font.pixelSize: 12
-                        text: songSearch.text.trim() === "" ? presenter.songFilter.total + (presenter.songFilter.total === 1 ? " lied" : " liederen")
+                        text: songSearch.text.trim() === "" && presenter.songFilter.category === "" && presenter.songFilter.tag === "" ? presenter.songFilter.total + (presenter.songFilter.total === 1 ? " lied" : " liederen")
                                                             : songList.count + " van " + presenter.songFilter.total
                     }
                 }
@@ -112,8 +141,8 @@ Rectangle {
                     Text {
                         visible: songList.count === 0
                         anchors.centerIn: parent; color: T.muted; font.pixelSize: 14
-                        text: songSearch.text.trim() === "" ? "Nog geen liederen. Maak er een met 'Nieuw lied…' of importeer ze uit SongSelect."
-                                                            : "Geen lied gevonden voor '" + songSearch.text.trim() + "'."
+                        text: presenter.songFilter.total === 0 ? "Nog geen liederen. Maak er een met 'Nieuw lied…' of importeer ze uit SongSelect."
+                                                                 : "Geen lied gevonden met deze zoekopdracht en filters."
                     }
                     delegate: Rectangle {
                         required property int index
@@ -123,6 +152,8 @@ Rectangle {
                         required property string ccli
                         required property string author
                         required property string order
+                        required property string category
+                        required property var tags
                         width: songList.width - 8; height: 46; radius: 8; color: T.card
                         RowLayout {
                             anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 6; spacing: 6
@@ -130,16 +161,18 @@ Rectangle {
                                 Layout.fillWidth: true; spacing: 0
                                 Text { Layout.fillWidth: true; text: (number !== "" ? number + "  " : "") + title
                                     color: T.text; font.pixelSize: 14; elide: Text.ElideRight }
-                                Text {   // credits of an imported song
-                                    visible: ccli !== "" || author !== ""
+                                Text {   // bundle, tags and credits
+                                    readonly property string line: [category, tags.length > 0 ? tags.map(function (t) { return "#" + t }).join(" ") : "",
+                                                                    ccli !== "" ? "CCLI " + ccli : "", author].filter(function (x) { return x !== "" }).join("  ·  ")
+                                    visible: line !== ""
                                     Layout.fillWidth: true; color: T.muted; font.pixelSize: 11; elide: Text.ElideRight
-                                    text: (ccli !== "" ? "CCLI " + ccli : "") + (ccli !== "" && author !== "" ? "  ·  " : "") + author
+                                    text: line
                                 }
                             }
                             AppButton { text: "+  Aan dienst"; implicitHeight: 34; onClicked: presenter.addSong(presenter.songFilter.sourceRow(index)) }
                             AppButton { text: "✎"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
                                 onClicked: { root.songEdit = presenter.songFilter.sourceRow(index); songEditor.heading = "Lied bewerken"
-                                    songEditor.openWith(title, number, lyrics, order) } }
+                                    songEditor.openWith(title, number, lyrics, order, category, tags) } }
                         }
                     }
                 }
@@ -281,11 +314,12 @@ Rectangle {
         id: songEditor
         subtitleLabel: "Liednummer (optioneel)"
         showOrder: true
+        showMeta: true
         orderLabel: "Standaardvolgorde van de delen, bijvoorbeeld: Couplet 1, Refrein, Couplet 2, Refrein (komt elk deel één keer in de tekst, dan hoef je het refrein maar één keer te typen)"
         bodyLabel: "Tekst: een lege regel = nieuwe slide. Een regel als [Couplet 1] boven een deel is de naam van dat deel (komt niet op het scherm)"
         onConfirmed: function (t, s, b) {
-            if (root.songEdit >= 0) presenter.songs.update(root.songEdit, t, s, b, songEditor.orderValue)
-            else presenter.songs.add(t, s, b, songEditor.orderValue)
+            if (root.songEdit >= 0) presenter.songs.update(root.songEdit, t, s, b, songEditor.orderValue, songEditor.categoryValue, songEditor.tagsValue)
+            else presenter.songs.add(t, s, b, songEditor.orderValue, songEditor.categoryValue, songEditor.tagsValue)
         }
     }
 }
