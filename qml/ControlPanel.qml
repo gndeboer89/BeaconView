@@ -92,6 +92,8 @@ Rectangle {
 
             Text { visible: parent.missing; Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.danger; font.pixelSize: 13
                 text: "⚠ Het videobestand is niet gevonden. Staat het op een USB-stick of een andere schijf die nu niet aangesloten is?" }
+            Text { visible: root.video && root.video.loading && root.video.errorText === ""; Layout.fillWidth: true; color: T.muted; font.pixelSize: 13
+                text: "Video wordt geladen…" }
             Text { visible: root.video && root.video.errorText !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.danger; font.pixelSize: 13
                 text: root.video ? "Afspelen mislukt: " + root.video.errorText : "" }
 

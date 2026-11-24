@@ -1,9 +1,11 @@
 #include "presenter.h"
 #include <QDateTime>
+#include <QDesktopServices>
 #include <algorithm>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QLocale>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
@@ -87,6 +89,25 @@ QString Presenter::liveText() const { return slideAt(m_item, m_slide); }
 QString Presenter::liveImage() const { return imageAt(m_item, m_slide); }
 QString Presenter::currentKind() const { const ServiceItem *it = m_service.item(m_item); return it ? it->kind : QString(); }
 int Presenter::currentLoopSeconds() const { const ServiceItem *it = m_service.item(m_item); return it ? it->loopSeconds : 0; }
+QString Presenter::upcomingVideo() const {
+    const ServiceItem *cur = m_service.item(m_item), *next = m_service.item(m_item + 1);
+    return (cur && cur->kind != "video" && next && next->kind == "video") ? next->video : QString();
+}
+
+QString Presenter::logPath() const { return dataDir() + "/log.txt"; }
+
+void Presenter::log(const QString &message) const {
+    QFile f(logPath());
+    if (f.size() > 256 * 1024) {                       // keep the log small: one old file is enough
+        QFile::remove(dataDir() + "/log.old.txt");
+        f.rename(dataDir() + "/log.old.txt");
+    }
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+        f.write((QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz") + "  " + message + "\n").toUtf8());
+}
+
+void Presenter::openLogFolder() const { QDesktopServices::openUrl(QUrl::fromLocalFile(dataDir())); }
+
 QString Presenter::liveVideo() const { const ServiceItem *it = m_service.item(m_item); return (it && it->kind == "video") ? it->video : QString(); }
 bool Presenter::liveVideoLoop() const { const ServiceItem *it = m_service.item(m_item); return it && it->videoLoop; }
 bool Presenter::liveVideoNext() const { const ServiceItem *it = m_service.item(m_item); return it && it->videoNext; }
@@ -388,6 +409,35 @@ void Presenter::importMedia(const QUrl &file) {
     m_media << QUrl::fromLocalFile(dst).toString();
     QSettings().setValue("media", m_media);
     emit mediaFilesChanged();
+}
+
+void Presenter::removeMedia(const QString &url) {
+    if (!m_media.contains(url)) return;
+    m_media.removeAll(url);
+    QSettings().setValue("media", m_media);
+    const QString path = QUrl(url).toLocalFile();
+    if (!path.isEmpty() && path.startsWith(dataDir() + "/media/")) QFile::remove(path);   // only our own copy
+    for (int i = 0; i < m_service.count(); ++i)
+        if (m_service.item(i)->background == url) m_service.setBackground(i, QString());   // back to the default
+    if (m_defaultBg == url) setDefaultBackground(QStringLiteral("g:sunset"));
+    emit mediaFilesChanged();
+    emit liveChanged();
+}
+
+QVariantMap Presenter::mediaInfo(const QString &url) const {
+    static const QStringList videoExt = {"mp4", "m4v", "mov", "webm", "mkv", "avi", "wmv"};
+    const QFileInfo fi(QUrl(url).toLocalFile());
+    return {{"name", fi.fileName()}, {"kind", videoExt.contains(fi.suffix().toLower()) ? "video" : "image"},
+            {"size", fi.size()}, {"sizeText", QLocale().formattedDataSize(fi.size(), 1)}, {"exists", fi.exists()}};
+}
+
+QVariantMap Presenter::mediaUsage(const QString &url) const {
+    int parts = 0;
+    for (int i = 0; i < m_service.count(); ++i) {
+        const ServiceItem *it = m_service.item(i);
+        if (it->background == url || (it->kind == "video" && it->video == url)) ++parts;
+    }
+    return {{"parts", parts}, {"isDefault", m_defaultBg == url}};
 }
 
 // ---- persistence ----------------------------------------------------------

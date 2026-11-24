@@ -1,6 +1,8 @@
 #include <QtTest>
 #include <QDir>
+#include <QImage>
 #include <QSettings>
+#include <QTemporaryDir>
 #include <QStandardPaths>
 #include "presenter.h"
 
@@ -119,6 +121,77 @@ private slots:
         QCOMPARE(p.itemInfo(a)["slides"].toStringList(), (QStringList{"Tekst", "", "Tekst 2"}));
         p.goToSlide(1);
         QCOMPARE(p.liveText(), QString());
+    }
+    void upcomingVideoIsPreloadable() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        p.addItem("prayer", "Gebed", "", "Gebed");
+        const int v = p.addVideo(QUrl::fromLocalFile("/tmp/film.mp4"));
+        p.addItem("blessing", "Zegen", "", "Zegen");
+        const int v2 = p.addVideo(QUrl::fromLocalFile("/tmp/film2.mp4"));
+        p.selectItem(0);
+        QCOMPARE(p.upcomingVideo(), QStringLiteral("file:///tmp/film.mp4"));   // the next part is a video: load it in advance
+        p.selectItem(v);
+        QCOMPARE(p.upcomingVideo(), QString());                                // playing a video: nothing is preloaded
+        p.selectItem(v + 1);
+        QCOMPARE(p.upcomingVideo(), QStringLiteral("file:///tmp/film2.mp4"));
+        p.selectItem(v2);
+        QCOMPARE(p.upcomingVideo(), QString());
+    }
+    void logFileStaysSmall() {
+        Presenter p;
+        QFile::remove(p.logPath());
+        p.log("eerste regel");
+        QFile f(p.logPath());
+        QVERIFY(f.open(QIODevice::ReadOnly));
+        QVERIFY(QString::fromUtf8(f.readAll()).contains("eerste regel"));
+        f.close();
+        const QString filler(200, 'x');
+        for (int i = 0; i < 2000; ++i) p.log(filler);                           // ~400 KB: must rotate
+        QVERIFY(QFileInfo(p.logPath()).size() < 300 * 1024);
+        QVERIFY(QFileInfo(QFileInfo(p.logPath()).absolutePath() + "/log.old.txt").exists());
+    }
+    void removeMediaCleansUp() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        QTemporaryDir src;
+        QImage img(20, 20, QImage::Format_RGB32); img.fill(Qt::blue);
+        QVERIFY(img.save(src.filePath("plaatje.png")));
+        p.importMedia(QUrl::fromLocalFile(src.filePath("plaatje.png")));
+        const QString url = p.mediaFiles().last();
+        const QString copy = QUrl(url).toLocalFile();
+        QVERIFY(QFileInfo::exists(copy));
+        QVERIFY(copy.contains("/media/"));
+
+        const int a = p.addItem("prayer", "Gebed", "", "Gebed");
+        p.addItem("prayer", "Zegen", "", "Zegen");
+        p.setItemBackground(a, url);
+        p.setDefaultBackground(url);
+        const auto use = p.mediaUsage(url);
+        QCOMPARE(use["parts"].toInt(), 1);
+        QVERIFY(use["isDefault"].toBool());
+        QCOMPARE(p.mediaInfo(url)["kind"].toString(), QStringLiteral("image"));
+        QVERIFY(p.mediaInfo(url)["exists"].toBool());
+        QCOMPARE(p.mediaInfo(url)["name"].toString(), QFileInfo(copy).fileName());
+
+        QSignalSpy changed(&p, &Presenter::mediaFilesChanged);
+        p.removeMedia(url);
+        QCOMPARE(changed.count(), 1);
+        QVERIFY(!p.mediaFiles().contains(url));
+        QVERIFY(!QFileInfo::exists(copy));                          // our copy is deleted
+        QVERIFY(QFileInfo::exists(src.filePath("plaatje.png")));    // the original is never touched
+        QCOMPARE(p.itemInfo(a)["background"].toString(), QString()); // part falls back to the default
+        QCOMPARE(p.defaultBackground(), QStringLiteral("g:sunset"));
+        p.removeMedia(url);                                          // unknown now: nothing happens
+        QCOMPARE(changed.count(), 1);
+    }
+    void videoPartCountsAsUsage() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        p.addVideo(QUrl("file:///media/film.mp4"));
+        QCOMPARE(p.mediaUsage("file:///media/film.mp4")["parts"].toInt(), 1);
+        QCOMPARE(p.mediaInfo("file:///media/film.mp4")["kind"].toString(), QStringLiteral("video"));
+        QVERIFY(!p.mediaInfo("file:///media/film.mp4")["exists"].toBool());
     }
     void imageSlides() {
         Presenter p;

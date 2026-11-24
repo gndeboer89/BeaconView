@@ -7,6 +7,7 @@
 #include <QTimer>
 #include "presenter.h"
 #include "videohub.h"
+#include "videothumbnails.h"
 
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
@@ -19,9 +20,11 @@ int main(int argc, char *argv[]) {
 
     Presenter presenter;
     VideoHub videoHub;      // must outlive the QML engine: components still use it while they are torn down
+    VideoThumbnails videoThumbs;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("presenter", &presenter);
     engine.rootContext()->setContextProperty("videoHub", &videoHub);
+    engine.rootContext()->setContextProperty("videoThumbs", &videoThumbs);
     const QStringList cli = app.arguments();
     auto cliValue = [&cli](const QString &key) { int i = cli.indexOf(key); return (i >= 0 && i + 1 < cli.size()) ? cli[i + 1] : QString(); };
     engine.rootContext()->setContextProperty("devTab", cliValue("--tab").isEmpty() ? -1 : cliValue("--tab").toInt());
@@ -34,7 +37,7 @@ int main(int argc, char *argv[]) {
 
     const QStringList args = app.arguments();
     // Developer aid: `--import file` adds a file to the media library.
-    if (const QString f = cliValue("--import"); !f.isEmpty()) presenter.importMedia(QUrl::fromLocalFile(f));
+    for (int i = 0; i + 1 < cli.size(); ++i) if (cli[i] == "--import") presenter.importMedia(QUrl::fromLocalFile(cli[i + 1]));
     // Developer aid: `--background /path/file.mp4` uses a file as default background.
     if (const QString bg = cliValue("--background"); !bg.isEmpty()) presenter.setDefaultBackground(QUrl::fromLocalFile(bg).toString());
     // Developer aid: `--overlay-demo` shows a 5:00 countdown, the clock and a message.
@@ -61,6 +64,8 @@ int main(int argc, char *argv[]) {
         presenter.importer()->importFiles("new-slides", {QUrl::fromLocalFile(f)});
     }
     if (const QString f = cliValue("--add-video"); !f.isEmpty()) presenter.selectItem(presenter.addVideo(QUrl::fromLocalFile(f)));
+    // Developer aid: `--select-after N` selects part N after everything above was added.
+    if (const QString sel = cliValue("--select-after"); !sel.isEmpty()) presenter.selectItem(sel.toInt());
     // Developer aid: `--then-text Title` adds a text part after the other adds (to test "continue after the video").
     if (const QString t = cliValue("--then-text"); !t.isEmpty()) presenter.addItem("prayer", t, "", t);
     // Developer aid: `--page N` opens a top-level page (0 = Dienst, 2 = Templates, ...), `--template id` activates a template.

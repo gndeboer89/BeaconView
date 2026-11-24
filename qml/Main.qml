@@ -84,7 +84,7 @@ ApplicationWindow {
                     onBibleRequested: side.focusBible()
                     onOverlaysRequested: side.tab = 3 }
             }
-            Placeholder { title: "Media" ; note: "Mediabibliotheek (video's, afbeeldingen) – komt in een volgende versie. Achtergronden vind je nu rechts in Dienst." }
+            MediaPage {}
             TemplatesPage {}
             ScreensPage {}
             SettingsPage {}
