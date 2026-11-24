@@ -13,6 +13,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - **Lege slide / alleen achtergrond**: een slide zonder tekst toont alleen de achtergrond; tijdens de dienst haalt **Geen tekst** (of **T**) de tekst van het scherm en laat de achtergrond staan, bij de volgende slide is de tekst er weer
 - **Schermeditor (WYSIWYG)** voor alle onderdelen behalve liederen: typ direct op het scherm met het gekozen template en de echte achtergrond, voeg slides toe/verplaats/verwijder ze, kies template en achtergrond en zie rechts het exacte resultaat
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst
+- **Liederen importeren uit SongSelect (CCLI)**: de tekstbestanden (.txt) en USR-bestanden (.usr) die je zelf met je account downloadt; de coupletlabels worden weggelaten, elk deel wordt een slide, titel, auteurs en CCLI-nummer worden bewaard en dubbele liederen worden overgeslagen. Er is geen directe koppeling met SongSelect (die is niet beschikbaar voor nieuwe programma's)
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster
 - Alle slides van het huidige onderdeel als aanklikbare lijst (klik = die slide live; de lijst scrolt mee), zwart scherm, logo, achtergrondkeuze (kleurverlopen, eigen afbeeldingen of **video's**: mp4/mov/webm/mkv, stil en in een lus)
 - Sneltoetsen: → / spatie / PgDn = volgende, ← / PgUp = vorige, **B** = zwart, **L** = logo
@@ -56,4 +57,4 @@ Zie `data/README.md` (bron en licentie) en `tools/make_bible.py` (conversie).
 
 ## Nog te doen
 Meer bijbelvertalingen (licentie nodig voor NBV21/HSV/BGT), videominiaturen, timer die automatisch de dienst start, 
-importeren van liederen (OpenSong/CCLI), afstandsbediening.
+importeren van liederen uit andere formaten (OpenSong, PDF), CCLI-nummer in de uitvoer tonen, afstandsbediening.

@@ -15,6 +15,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/main.cpp
     src/servicemodel.cpp src/servicemodel.h
     src/songlibrary.cpp  src/songlibrary.h
+    src/songimporter.cpp src/songimporter.h
     src/presenter.cpp    src/presenter.h
     src/bible.cpp        src/bible.h
     src/templatelibrary.cpp src/templatelibrary.h
@@ -104,12 +105,16 @@ if(BUILD_TESTING)
     target_link_libraries(tst_service PRIVATE Qt6::Test)
     add_test(NAME service COMMAND tst_service)
     qt_add_executable(tst_presenter tests/tst_presenter.cpp
-        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/bible.cpp
+        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/songimporter.cpp src/bible.cpp
         src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp src/slideimporter.cpp)
     qt_add_resources(tst_presenter "bible_data" PREFIX "/" FILES data/bible_svv.json)
     target_include_directories(tst_presenter PRIVATE src)
     target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui Qt6::Pdf)
     add_test(NAME presenter COMMAND tst_presenter)
+    qt_add_executable(tst_songimport tests/tst_songimport.cpp src/songlibrary.cpp src/songlibrary.h src/songimporter.cpp src/songimporter.h)
+    target_include_directories(tst_songimport PRIVATE src)
+    target_link_libraries(tst_songimport PRIVATE Qt6::Test Qt6::Core)
+    add_test(NAME songimport COMMAND tst_songimport)
     qt_add_executable(tst_importer tests/tst_importer.cpp src/slideimporter.cpp src/slideimporter.h)
     target_include_directories(tst_importer PRIVATE src)
     target_compile_definitions(tst_importer PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
