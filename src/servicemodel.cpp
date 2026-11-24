@@ -68,7 +68,9 @@ QJsonArray ServiceModel::toJson() const {
                                {"refs", QJsonArray::fromStringList(it.refs)}, {"template", it.templateId},
                                {"images", QJsonArray::fromStringList(it.images)}, {"loopSeconds", it.loopSeconds},
                                {"video", it.video}, {"videoLoop", it.videoLoop}, {"videoNext", it.videoNext},
-                               {"labels", QJsonArray::fromStringList(it.labels)}});
+                               {"labels", QJsonArray::fromStringList(it.labels)}, {"source", it.source},
+                               {"order", QJsonArray::fromStringList(it.order)}, {"defaultOrder", QJsonArray::fromStringList(it.defaultOrder)},
+                               {"ccli", it.ccli}, {"author", it.author}});
     }
     return arr;
 }
@@ -84,6 +86,11 @@ void ServiceModel::fromJson(const QJsonArray &arr) {
         for (const auto &s : o["refs"].toArray()) it.refs << s.toString();
         for (const auto &s : o["images"].toArray()) it.images << s.toString();
         for (const auto &s : o["labels"].toArray()) it.labels << s.toString();
+        it.source = o["source"].toString();
+        for (const auto &s : o["order"].toArray()) it.order << s.toString();
+        for (const auto &s : o["defaultOrder"].toArray()) it.defaultOrder << s.toString();
+        it.ccli = o["ccli"].toString();
+        it.author = o["author"].toString();
         it.loopSeconds = o["loopSeconds"].toInt();
         it.video = o["video"].toString();
         it.videoLoop = o["videoLoop"].toBool();
@@ -125,4 +132,47 @@ QString ServiceModel::joinLabeled(const QStringList &slides, const QStringList &
         blocks << (name.isEmpty() ? slides[i] : "[" + name + "]\n" + slides[i]);
     }
     return blocks.join("\n\n");
+}
+
+QStringList ServiceModel::parseOrder(const QString &text) {
+    QStringList out;
+    for (const QString &p : text.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts)) {
+        const QString t = p.simplified();
+        if (!t.isEmpty()) out << t;
+    }
+    return out;
+}
+
+QString ServiceModel::joinOrder(const QStringList &order) { return order.join(", "); }
+
+static QString foldName(const QString &s) { return s.simplified().toCaseFolded(); }
+
+QStringList ServiceModel::partNames(const QString &source) {
+    QStringList labels;
+    splitLabeled(source, &labels);
+    QStringList names;
+    for (int i = 0; i < labels.size(); ++i) {
+        const QString n = labels[i].isEmpty() ? "#" + QString::number(i + 1) : labels[i];
+        if (!names.contains(n, Qt::CaseInsensitive)) names << n;     // a name that is used twice is one part
+    }
+    return names;
+}
+
+void ServiceModel::expandOrder(const QString &source, const QStringList &order, QStringList *slides, QStringList *labels) {
+    QStringList parts, names;
+    parts = splitLabeled(source, &names);
+    slides->clear(); labels->clear();
+    for (const QString &raw : order) {
+        const QString want = foldName(raw);
+        int found = -1;
+        if (want.startsWith('#')) {
+            bool ok = false;
+            const int n = want.mid(1).toInt(&ok);
+            if (ok && n >= 1 && n <= parts.size()) found = n - 1;
+        } else {
+            for (int i = 0; i < names.size() && found < 0; ++i) if (foldName(names[i]) == want) found = i;   // the first part with that name
+        }
+        if (found >= 0) { *slides << parts[found]; *labels << names[found]; }
+    }
+    if (slides->isEmpty()) { *slides = parts; *labels = names; }   // no order, or nothing in it matched
 }

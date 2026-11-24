@@ -21,6 +21,13 @@ struct ServiceItem {
     // Song parts: the name of each slide ("Verse 1", "Chorus"), parallel to `slides` (may be shorter). Only for the operator and
     // the editor; never shown on the output.
     QStringList labels;
+    // Song parts in an order (see ServiceModel::expandOrder). `source` is the text with every part once ("[Verse 1]" lines);
+    // `order` is the order this part of the service uses (empty = the parts as they are written); `defaultOrder` is the
+    // song's own standard order, so "back to standard" is possible. `slides`/`labels` are the result of source + order.
+    QString source;
+    QStringList order, defaultOrder;
+    // Credits of a song from the library, for the usage report.
+    QString ccli, author;
 };
 
 // Ordered list of parts ("onderdelen") that make up a church service.
@@ -54,6 +61,13 @@ public:
     // empty when a slide has no name) and is not part of the slide text. joinLabeled is the reverse (for the editors).
     static QStringList splitLabeled(const QString &text, QStringList *labels);
     static QString joinLabeled(const QStringList &slides, const QStringList &labels);
+    // Song order: a list of part names ("Verse 1", "Chorus", "#3" = the third part). Names are matched without regard to case.
+    static QStringList parseOrder(const QString &text);              // "V1, Chorus; Verse 2" -> list (commas, semicolons, new lines)
+    static QString joinOrder(const QStringList &order);
+    // The slides of `source` in `order`. Empty order, or no name that matches, gives the parts as written.
+    static void expandOrder(const QString &source, const QStringList &order, QStringList *slides, QStringList *labels);
+    // The names that can be used in an order for this text, in the order they are written ("Verse 1", ..., "#3" for a part without a name).
+    static QStringList partNames(const QString &source);
 
 private:
     QList<ServiceItem> m_items;

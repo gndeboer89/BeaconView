@@ -50,7 +50,7 @@ Rectangle {
             AppButton { visible: root.tab === 0; implicitHeight: 34; text: "Importeren…"; onClicked: fileDialog.open() }
             AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Importeren…"; onClicked: songImport.open() }
             AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Nieuw lied…"
-                onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "") } }
+                onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "", "") } }
         }
 
         StackLayout {
@@ -84,29 +84,63 @@ Rectangle {
             }
 
             // ---- Liederen -------------------------------------------------------------
-            ListView {
-                id: songList
-                clip: true; spacing: 4
-                model: presenter.songs
-                ScrollBar.vertical: ScrollBar {}
-                delegate: Rectangle {
-                    width: songList.width - 8; height: 46; radius: 8; color: T.card
-                    RowLayout {
-                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 6; spacing: 6
-                        ColumnLayout {
-                            Layout.fillWidth: true; spacing: 0
-                            Text { Layout.fillWidth: true; text: (number !== "" ? number + "  " : "") + title
-                                color: T.text; font.pixelSize: 14; elide: Text.ElideRight }
-                            Text {   // credits of an imported song
-                                visible: ccli !== "" || author !== ""
-                                Layout.fillWidth: true; color: T.muted; font.pixelSize: 11; elide: Text.ElideRight
-                                text: (ccli !== "" ? "CCLI " + ccli : "") + (ccli !== "" && author !== "" ? "  ·  " : "") + author
+            ColumnLayout {
+                spacing: 8
+                RowLayout {
+                    Layout.fillWidth: true; spacing: 10
+                    TextField {
+                        id: songSearch
+                        Layout.fillWidth: true; implicitHeight: 34
+                        placeholderText: "Zoek een lied: titel, regel uit de tekst, auteur of CCLI-nummer"
+                        color: T.text; selectByMouse: true; font.pixelSize: 13
+                        background: Rectangle { color: T.card; radius: 6; border.color: songSearch.activeFocus ? T.accent : T.border }
+                        onTextChanged: presenter.songFilter.query = text
+                        Keys.onEscapePressed: text = ""
+                    }
+                    Text {
+                        color: T.muted; font.pixelSize: 12
+                        text: songSearch.text.trim() === "" ? presenter.songFilter.total + (presenter.songFilter.total === 1 ? " lied" : " liederen")
+                                                            : songList.count + " van " + presenter.songFilter.total
+                    }
+                }
+                ListView {
+                    id: songList
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    clip: true; spacing: 4
+                    model: presenter.songFilter
+                    ScrollBar.vertical: ScrollBar {}
+                    Text {
+                        visible: songList.count === 0
+                        anchors.centerIn: parent; color: T.muted; font.pixelSize: 14
+                        text: songSearch.text.trim() === "" ? "Nog geen liederen. Maak er een met 'Nieuw lied…' of importeer ze uit SongSelect."
+                                                            : "Geen lied gevonden voor '" + songSearch.text.trim() + "'."
+                    }
+                    delegate: Rectangle {
+                        required property int index
+                        required property string title
+                        required property string number
+                        required property string lyrics
+                        required property string ccli
+                        required property string author
+                        required property string order
+                        width: songList.width - 8; height: 46; radius: 8; color: T.card
+                        RowLayout {
+                            anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 6; spacing: 6
+                            ColumnLayout {
+                                Layout.fillWidth: true; spacing: 0
+                                Text { Layout.fillWidth: true; text: (number !== "" ? number + "  " : "") + title
+                                    color: T.text; font.pixelSize: 14; elide: Text.ElideRight }
+                                Text {   // credits of an imported song
+                                    visible: ccli !== "" || author !== ""
+                                    Layout.fillWidth: true; color: T.muted; font.pixelSize: 11; elide: Text.ElideRight
+                                    text: (ccli !== "" ? "CCLI " + ccli : "") + (ccli !== "" && author !== "" ? "  ·  " : "") + author
+                                }
                             }
+                            AppButton { text: "+  Aan dienst"; implicitHeight: 34; onClicked: presenter.addSong(presenter.songFilter.sourceRow(index)) }
+                            AppButton { text: "✎"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
+                                onClicked: { root.songEdit = presenter.songFilter.sourceRow(index); songEditor.heading = "Lied bewerken"
+                                    songEditor.openWith(title, number, lyrics, order) } }
                         }
-                        AppButton { text: "+  Aan dienst"; implicitHeight: 34; onClicked: presenter.addSong(index) }
-                        AppButton { text: "✎"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
-                            onClicked: { root.songEdit = index; songEditor.heading = "Lied bewerken"
-                                songEditor.openWith(title, number, lyrics) } }
                     }
                 }
             }
@@ -246,10 +280,12 @@ Rectangle {
     TextEditorDialog {
         id: songEditor
         subtitleLabel: "Liednummer (optioneel)"
+        showOrder: true
+        orderLabel: "Standaardvolgorde van de delen, bijvoorbeeld: Couplet 1, Refrein, Couplet 2, Refrein (komt elk deel één keer in de tekst, dan hoef je het refrein maar één keer te typen)"
         bodyLabel: "Tekst: een lege regel = nieuwe slide. Een regel als [Couplet 1] boven een deel is de naam van dat deel (komt niet op het scherm)"
         onConfirmed: function (t, s, b) {
-            if (root.songEdit >= 0) presenter.songs.update(root.songEdit, t, s, b)
-            else presenter.songs.add(t, s, b)
+            if (root.songEdit >= 0) presenter.songs.update(root.songEdit, t, s, b, songEditor.orderValue)
+            else presenter.songs.add(t, s, b, songEditor.orderValue)
         }
     }
 }

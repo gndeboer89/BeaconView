@@ -52,7 +52,7 @@ ApplicationWindow {
                     smooth: true; mipmap: true
                 }
                 Repeater {
-                    model: ["Dienst", "Media", "Templates", "Schermen", "Instellingen"]
+                    model: ["Dienst", "Media", "Templates", "Schermen", "Rapport", "Instellingen"]
                     AppButton { text: modelData; flat: true; active: win.page === index; implicitHeight: 38
                         onClicked: win.page = index }
                 }
@@ -89,6 +89,7 @@ ApplicationWindow {
             MediaPage {}
             TemplatesPage {}
             ScreensPage {}
+            ReportPage {}
             SettingsPage {}
         }
     }

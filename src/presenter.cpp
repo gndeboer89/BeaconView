@@ -12,6 +12,7 @@
 #include <QStandardPaths>
 
 Presenter::Presenter(QObject *parent) : QObject(parent) {
+    m_songFilter.setSourceModel(&m_songs);      // the song list that the user sees: sorted and searchable
     QSettings s;
     m_outputScreen = s.value("outputScreen").toString();
     m_defaultBg = s.value("defaultBackground", m_defaultBg).toString();
@@ -171,6 +172,7 @@ void Presenter::selectItem(int i) {
     m_slide = 0;
     setTextHidden(false);                     // a new slide shows its text again
     announceItemChange(otherItem);
+    noteLive();
     emit liveChanged();
     updateLoop();
 }
@@ -179,6 +181,17 @@ void Presenter::selectItem(int i) {
 void Presenter::announceItemChange(bool otherItem) {
     if (otherItem) emit slidesChanged();
     if (liveVideo() != QString()) emit videoStart();   // a video always starts from the beginning when it goes live
+}
+
+void Presenter::noteLive() {
+    if (!m_outputOn) return;                                   // rehearsing with the output closed does not count
+    const ServiceItem *it = m_service.item(m_item);
+    if (!it || it->kind != "song") return;
+    const QString title = it->subtitle.isEmpty() ? it->title : it->subtitle;   // a song part is "Lied" with the song title as subtitle
+    const QString key = it->ccli.isEmpty() ? "t:" + SongFilter::fold(title) : "c:" + it->ccli;
+    if (m_usedThisSession.contains(key)) return;
+    m_usedThisSession.insert(key);
+    m_usage.record(title, it->ccli, it->author, m_name);
 }
 
 void Presenter::setLoopPaused(bool paused) {
@@ -226,6 +239,7 @@ void Presenter::nextSlide() {
     }
     setTextHidden(false);
     announceItemChange(otherItem);
+    noteLive();
     emit liveChanged();
     updateLoop();
 }
@@ -243,6 +257,7 @@ void Presenter::prevSlide() {
     }
     setTextHidden(false);
     announceItemChange(otherItem);
+    noteLive();
     emit liveChanged();
     updateLoop();
 }
@@ -284,6 +299,7 @@ void Presenter::setOutputOn(bool b) {
     m_outputOn = b;
     emit outputOnChanged();
     m_extraScreens.setOutputOn(b);      // the extra screens that open with the output follow
+    if (b) { m_usedThisSession.clear(); noteLive(); }   // a new time of showing: what is live now counts
 }
 
 void Presenter::setOutputScreen(const QString &s) {
@@ -326,6 +342,7 @@ void Presenter::editItemSlides(int i, const QString &title, const QString &subti
     if (!(keepRefs && slides.size() == it.refs.size())) it.refs.clear();
     it.slides = slides;
     it.labels.clear();                   // the screen editor is not used for songs; slide names would no longer match
+    it.source.clear(); it.order.clear(); it.defaultOrder.clear();
     it.images = images;
     while (it.images.size() > it.slides.size()) it.slides << QString();   // keep both lists the same length
     while (it.slides.size() > it.images.size() && !it.images.isEmpty()) it.images << QString();
@@ -371,7 +388,12 @@ void Presenter::addSong(int songIndex) {
     const QString number = m_songs.data(idx, SongLibrary::NumberRole).toString();
     const QString title = m_songs.data(idx, SongLibrary::TitleRole).toString();
     ServiceItem it{"song", number.isEmpty() ? QStringLiteral("Lied") : QStringLiteral("Lied %1").arg(number), title, {}, {}};
-    it.slides = ServiceModel::splitLabeled(m_songs.data(idx, SongLibrary::LyricsRole).toString(), &it.labels);
+    it.source = m_songs.data(idx, SongLibrary::LyricsRole).toString();
+    it.defaultOrder = ServiceModel::parseOrder(m_songs.data(idx, SongLibrary::OrderRole).toString());
+    it.order = it.defaultOrder;                                  // a new part starts with the standard order of the song
+    it.ccli = m_songs.data(idx, SongLibrary::CcliRole).toString();
+    it.author = m_songs.data(idx, SongLibrary::AuthorRole).toString();
+    ServiceModel::expandOrder(it.source, it.order, &it.slides, &it.labels);
     m_service.append(it);
 }
 
@@ -387,20 +409,33 @@ int Presenter::addPassage(const QString &reference, int versesPerSlide, bool ver
     return idx;
 }
 
-void Presenter::editItem(int i, const QString &title, const QString &subtitle, const QString &text) {
+void Presenter::editItem(int i, const QString &title, const QString &subtitle, const QString &text, const QString &order) {
     const ServiceItem *old = m_service.item(i);
     if (!old) return;
     ServiceItem it = *old;
     it.title = title;
     it.subtitle = subtitle;
-    it.slides = ServiceModel::splitLabeled(text, &it.labels);
+    it.source = text;
+    it.order = ServiceModel::parseOrder(order);
+    ServiceModel::expandOrder(it.source, it.order, &it.slides, &it.labels);
     if (it.slides.size() != it.refs.size()) it.refs.clear();  // references only stay valid while slide count is unchanged
     m_service.replace(i, it);
 }
 
+QString Presenter::itemOrder(int i) const {
+    const ServiceItem *it = m_service.item(i);
+    return it ? ServiceModel::joinOrder(it->order) : QString();
+}
+
+QString Presenter::itemDefaultOrder(int i) const {
+    const ServiceItem *it = m_service.item(i);
+    return it ? ServiceModel::joinOrder(it->defaultOrder) : QString();
+}
+
 QString Presenter::itemText(int i) const {
     const ServiceItem *it = m_service.item(i);
-    return it ? ServiceModel::joinLabeled(it->slides, it->labels) : QString();
+    if (!it) return QString();
+    return it->source.isEmpty() ? ServiceModel::joinLabeled(it->slides, it->labels) : it->source;   // the parts once; the order is separate
 }
 
 void Presenter::removeItem(int i) { m_service.remove(i); }

@@ -131,7 +131,11 @@ Rectangle {
         if (info.kind === "song") {
             editIndex = i
             editor.heading = "Lied bewerken"
-            editor.openWith(info.title, info.subtitle, presenter.itemText(i))
+            editor.showOrder = true
+            editor.orderLabel = "Volgorde in deze dienst (de standaardvolgorde van het lied blijft zoals hij is)"
+            editor.resetValue = presenter.itemDefaultOrder(i)
+            editor.resetLabel = editor.resetValue === "" ? "Zoals geschreven" : "Standaard"
+            editor.openWith(info.title, info.subtitle, presenter.itemText(i), presenter.itemOrder(i))
         } else if (info.kind === "video") {
             videoOptions.openFor(i)
         } else {
@@ -217,7 +221,7 @@ Rectangle {
         id: editor
         bodyLabel: "Tekst: een lege regel = nieuwe slide. Een regel als [Couplet 1] boven een deel is de naam van dat deel (komt niet op het scherm)"
         onConfirmed: function (t, s, b) {
-            if (root.editIndex >= 0) presenter.editItem(root.editIndex, t, s, b)
+            if (root.editIndex >= 0) presenter.editItem(root.editIndex, t, s, b, editor.orderValue)
             else presenter.addItem("custom", t, s, b)
         }
     }

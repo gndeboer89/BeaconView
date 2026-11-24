@@ -1,5 +1,6 @@
 #pragma once
 #include <QObject>
+#include <QSet>
 #include <QStringList>
 #include <QTimer>
 #include <QUrl>
@@ -9,8 +10,10 @@
 #include "overlaycontroller.h"
 #include "servicemodel.h"
 #include "slideimporter.h"
+#include "songfilter.h"
 #include "songlibrary.h"
 #include "templatelibrary.h"
+#include "usagelog.h"
 
 // Central controller: owns the service, the live state shown on the output
 // screen(s) and persistence. Exposed to QML as `presenter`.
@@ -18,7 +21,9 @@ class Presenter : public QObject {
     Q_OBJECT
     Q_PROPERTY(ServiceModel *service READ service CONSTANT)
     Q_PROPERTY(SongLibrary *songs READ songs CONSTANT)
+    Q_PROPERTY(SongFilter *songFilter READ songFilter CONSTANT)   // the song list: sorted and searchable
     Q_PROPERTY(ExtraScreens *extraScreens READ extraScreens CONSTANT)
+    Q_PROPERTY(UsageLog *usage READ usage CONSTANT)                // which songs were shown (report)
     Q_PROPERTY(Bible *bible READ bible CONSTANT)
     Q_PROPERTY(TemplateLibrary *templates READ templates CONSTANT)
     Q_PROPERTY(OverlayController *overlays READ overlays CONSTANT)
@@ -70,7 +75,9 @@ public:
 
     ServiceModel *service() { return &m_service; }
     SongLibrary *songs() { return &m_songs; }
+    SongFilter *songFilter() { return &m_songFilter; }
     ExtraScreens *extraScreens() { return &m_extraScreens; }
+    UsageLog *usage() { return &m_usage; }
     Bible *bible() { return &m_bible; }
     TemplateLibrary *templates() { return &m_templates; }
     OverlayController *overlays() { return &m_overlays; }
@@ -136,12 +143,16 @@ public:
     Q_INVOKABLE void addSong(int songIndex);
     // Adds a Bible passage as a "scripture" part; returns its index or -1 when the reference is invalid.
     Q_INVOKABLE int addPassage(const QString &reference, int versesPerSlide, bool verseNumbers, bool show);
-    Q_INVOKABLE void editItem(int i, const QString &title, const QString &subtitle, const QString &text);
+    // `order`: the order of the song parts for this part of the service ("Couplet 1, Refrein, Couplet 2, Refrein"), empty = as written
+    Q_INVOKABLE void editItem(int i, const QString &title, const QString &subtitle, const QString &text, const QString &order = QString());
     // Everything the screen editor needs: {kind, title, subtitle, background, templateId, slides, refs}
     Q_INVOKABLE QVariantMap itemInfo(int i) const;
     // Replaces the slides of a part. References (bible) are kept only when keepRefs is set and the slide count is unchanged.
     Q_INVOKABLE void editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides,
                                     const QStringList &images, int loopSeconds, bool keepRefs);
+    Q_INVOKABLE QStringList partNames(const QString &text) const { return ServiceModel::partNames(text); }   // names usable in an order
+    Q_INVOKABLE QString itemOrder(int i) const;          // the order this part uses, as text
+    Q_INVOKABLE QString itemDefaultOrder(int i) const;   // the standard order of the song
     Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)
     Q_INVOKABLE void removeItem(int i);
     Q_INVOKABLE void moveItem(int i, int delta);
@@ -182,6 +193,7 @@ private:
     QString imageAt(int item, int slide) const;
     void updateLoop();              // (re)start or stop the loop timer for the live part
     void announceItemChange(bool otherItem);
+    void noteLive();       // puts the live song in the usage report (once per time the output was open)
     QString refAt(int item, int slide) const;
     QVariantMap templateFor(int item) const;
     QString backgroundOf(int item) const;
@@ -189,7 +201,10 @@ private:
 
     ServiceModel m_service;
     SongLibrary m_songs;
+    SongFilter m_songFilter;
     ExtraScreens m_extraScreens;
+    UsageLog m_usage;
+    QSet<QString> m_usedThisSession;   // songs already in the report since the output was opened
     Bible m_bible;
     TemplateLibrary m_templates;
     OverlayController m_overlays;
