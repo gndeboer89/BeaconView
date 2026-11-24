@@ -9,13 +9,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Windows stays on 6.10: since Qt 6.11 the Windows packages use a new folder layout that the installer
+        # (aqtinstall 3.3.0, the newest) cannot read yet, so 6.11/6.12 fail to install there. (6.8.3 does not link
+        # on current macOS SDKs: framework 'AGL' not found.) Trial: Linux and macOS on 6.12 (LTS).
         include:
           - os: windows-latest
-            qt: 6.8.*
+            qt: 6.10.*
           - os: ubuntu-latest
-            qt: 6.8.*
+            qt: 6.11.*
           - os: macos-latest
-            qt: 6.10.*   # Qt 6.8.3 fails to link on current macOS SDKs (framework 'AGL' not found)
+            qt: 6.11.*
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
