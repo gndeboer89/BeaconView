@@ -105,6 +105,13 @@ Item {
                     Slider { Layout.fillWidth: true; from: 0.04; to: 0.4; stepSize: 0.01; value: root.b.watermarkSize
                         enabled: root.b.source !== "" && root.b.watermark
                         onMoved: { root.previewMode = 1; root.b.watermarkSize = value } }
+
+                    Rectangle { Layout.fillWidth: true; height: 1; color: T.border }
+                    Text { text: "Problemen oplossen"; color: T.text; font.pixelSize: 14; font.bold: true }
+                    Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 12
+                        text: "Start een video niet goed? In het logbestand staat wat er gebeurde. Stuur dat mee als je een probleem meldt." }
+                    AppButton { Layout.fillWidth: true; implicitHeight: 34; text: "Map met logbestand openen"; onClicked: presenter.openLogFolder() }
+                    Text { Layout.fillWidth: true; wrapMode: Text.WrapAnywhere; color: T.muted; font.pixelSize: 11; text: presenter.logPath }
                 }
             }
         }

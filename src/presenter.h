@@ -37,6 +37,9 @@ class Presenter : public QObject {
     Q_PROPERTY(QString liveImage READ liveImage NOTIFY liveChanged)
     // The video of the part that is live ("" when the live part is not a video)
     Q_PROPERTY(QString liveVideo READ liveVideo NOTIFY slidesChanged)
+    // The video that is the NEXT part (when the live part is not a video): it can be loaded in advance so it starts at once.
+    Q_PROPERTY(QString upcomingVideo READ upcomingVideo NOTIFY slidesChanged)
+    Q_PROPERTY(QString logPath READ logPath CONSTANT)
     Q_PROPERTY(bool liveVideoLoop READ liveVideoLoop NOTIFY slidesChanged)
     Q_PROPERTY(bool liveVideoNext READ liveVideoNext NOTIFY slidesChanged)
     Q_PROPERTY(QString liveText READ liveText NOTIFY liveChanged)
@@ -84,6 +87,8 @@ public:
     void setLoopPaused(bool paused);
     QString liveImage() const;
     QString liveVideo() const;
+    QString upcomingVideo() const;
+    QString logPath() const;
     bool liveVideoLoop() const;
     bool liveVideoNext() const;
     QString liveText() const;
@@ -119,6 +124,9 @@ public:
     Q_INVOKABLE int addVideo(const QUrl &file);
     Q_INVOKABLE void editVideo(int i, const QString &title, const QUrl &file, bool loop, bool next);
     Q_INVOKABLE bool fileExists(const QString &fileUrl) const;
+    // Appends a line to the log file in the app data folder (kept small); used to find out why a video does not start.
+    Q_INVOKABLE void log(const QString &message) const;
+    Q_INVOKABLE void openLogFolder() const;
     Q_INVOKABLE int addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text);   // returns the new index
     Q_INVOKABLE void addSong(int songIndex);
     // Adds a Bible passage as a "scripture" part; returns its index or -1 when the reference is invalid.

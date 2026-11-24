@@ -1,5 +1,6 @@
 #include "presenter.h"
 #include <QDateTime>
+#include <QDesktopServices>
 #include <algorithm>
 #include <QDir>
 #include <QFile>
@@ -87,6 +88,25 @@ QString Presenter::liveText() const { return slideAt(m_item, m_slide); }
 QString Presenter::liveImage() const { return imageAt(m_item, m_slide); }
 QString Presenter::currentKind() const { const ServiceItem *it = m_service.item(m_item); return it ? it->kind : QString(); }
 int Presenter::currentLoopSeconds() const { const ServiceItem *it = m_service.item(m_item); return it ? it->loopSeconds : 0; }
+QString Presenter::upcomingVideo() const {
+    const ServiceItem *cur = m_service.item(m_item), *next = m_service.item(m_item + 1);
+    return (cur && cur->kind != "video" && next && next->kind == "video") ? next->video : QString();
+}
+
+QString Presenter::logPath() const { return dataDir() + "/log.txt"; }
+
+void Presenter::log(const QString &message) const {
+    QFile f(logPath());
+    if (f.size() > 256 * 1024) {                       // keep the log small: one old file is enough
+        QFile::remove(dataDir() + "/log.old.txt");
+        f.rename(dataDir() + "/log.old.txt");
+    }
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+        f.write((QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz") + "  " + message + "\n").toUtf8());
+}
+
+void Presenter::openLogFolder() const { QDesktopServices::openUrl(QUrl::fromLocalFile(dataDir())); }
+
 QString Presenter::liveVideo() const { const ServiceItem *it = m_service.item(m_item); return (it && it->kind == "video") ? it->video : QString(); }
 bool Presenter::liveVideoLoop() const { const ServiceItem *it = m_service.item(m_item); return it && it->videoLoop; }
 bool Presenter::liveVideoNext() const { const ServiceItem *it = m_service.item(m_item); return it && it->videoNext; }

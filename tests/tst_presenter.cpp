@@ -120,6 +120,35 @@ private slots:
         p.goToSlide(1);
         QCOMPARE(p.liveText(), QString());
     }
+    void upcomingVideoIsPreloadable() {
+        Presenter p;
+        p.service()->fromJson(QJsonArray());
+        p.addItem("prayer", "Gebed", "", "Gebed");
+        const int v = p.addVideo(QUrl::fromLocalFile("/tmp/film.mp4"));
+        p.addItem("blessing", "Zegen", "", "Zegen");
+        const int v2 = p.addVideo(QUrl::fromLocalFile("/tmp/film2.mp4"));
+        p.selectItem(0);
+        QCOMPARE(p.upcomingVideo(), QStringLiteral("file:///tmp/film.mp4"));   // the next part is a video: load it in advance
+        p.selectItem(v);
+        QCOMPARE(p.upcomingVideo(), QString());                                // playing a video: nothing is preloaded
+        p.selectItem(v + 1);
+        QCOMPARE(p.upcomingVideo(), QStringLiteral("file:///tmp/film2.mp4"));
+        p.selectItem(v2);
+        QCOMPARE(p.upcomingVideo(), QString());
+    }
+    void logFileStaysSmall() {
+        Presenter p;
+        QFile::remove(p.logPath());
+        p.log("eerste regel");
+        QFile f(p.logPath());
+        QVERIFY(f.open(QIODevice::ReadOnly));
+        QVERIFY(QString::fromUtf8(f.readAll()).contains("eerste regel"));
+        f.close();
+        const QString filler(200, 'x');
+        for (int i = 0; i < 2000; ++i) p.log(filler);                           // ~400 KB: must rotate
+        QVERIFY(QFileInfo(p.logPath()).size() < 300 * 1024);
+        QVERIFY(QFileInfo(QFileInfo(p.logPath()).absolutePath() + "/log.old.txt").exists());
+    }
     void imageSlides() {
         Presenter p;
         p.service()->fromJson(QJsonArray());

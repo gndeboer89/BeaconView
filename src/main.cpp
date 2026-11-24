@@ -61,6 +61,8 @@ int main(int argc, char *argv[]) {
         presenter.importer()->importFiles("new-slides", {QUrl::fromLocalFile(f)});
     }
     if (const QString f = cliValue("--add-video"); !f.isEmpty()) presenter.selectItem(presenter.addVideo(QUrl::fromLocalFile(f)));
+    // Developer aid: `--select-after N` selects part N after everything above was added.
+    if (const QString sel = cliValue("--select-after"); !sel.isEmpty()) presenter.selectItem(sel.toInt());
     // Developer aid: `--then-text Title` adds a text part after the other adds (to test "continue after the video").
     if (const QString t = cliValue("--then-text"); !t.isEmpty()) presenter.addItem("prayer", t, "", t);
     // Developer aid: `--page N` opens a top-level page (0 = Dienst, 2 = Templates, ...), `--template id` activates a template.
