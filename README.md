@@ -3,7 +3,7 @@
 Native kerkpresentatiesoftware voor beamer, tv en LED-schermen.
 Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
-## Wat werkt nu (v0.1.1.0)
+## Wat werkt nu (v0.1.2.0)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
 - **Media-bibliotheek** (tab Media): alle achtergronden, afbeeldingen en video's in één overzicht met miniaturen (bij video's het eerste beeld), filteren, meerdere bestanden tegelijk importeren, voorbeeld en gegevens, gebruiken als achtergrond van het huidige onderdeel of als standaardachtergrond, een video als video-onderdeel toevoegen, en **verwijderen** (alleen je eigen kopie in de app; verwijzingen worden opgeruimd)
 - **Presentaties**: PDF, PowerPoint (`.pptx`, `.ppt`, `.odp`) en afbeeldingen importeren als slides; elke dia wordt een beeld op het scherm. PDF wordt rechtstreeks gelezen; PowerPoint wordt omgezet met LibreOffice (gratis) of, op Windows en macOS, met PowerPoint zelf. Lukt dat niet, dan staat er hoe je het als PDF exporteert.
@@ -12,6 +12,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - **Video als eigen onderdeel**: afspelen met geluid, pauzeren, zoeken en volume; optioneel herhalen of na afloop automatisch naar het volgende onderdeel. Het videobestand blijft staan waar het staat (er wordt niets gekopieerd); ontbreekt het, dan zie je een waarschuwing.
 - **Lege slide / alleen achtergrond**: een slide zonder tekst toont alleen de achtergrond; tijdens de dienst haalt **Geen tekst** (of **T**) de tekst van het scherm en laat de achtergrond staan, bij de volgende slide is de tekst er weer
 - **Schermeditor (WYSIWYG)** voor alle onderdelen behalve liederen: typ direct op het scherm met het gekozen template en de echte achtergrond, voeg slides toe/verplaats/verwijder ze, kies template en achtergrond en zie rechts het exacte resultaat
+- **Extra schermen** (pagina Schermen): een stage-scherm voor wie op het podium staat (huidige en volgende tekst met de naam van het deel, klok, timer, zwart-scherm-melding) en een ondertitelscherm met chroma-key (alleen de tekst met rand op groen, blauw, magenta of zwart; positie, grootte en tekstkleur instelbaar). Per scherm kies je een beeldscherm of een los venster (de venstertitel is de naam, voor een venster-opname in OBS of vMix); schermen kunnen met de uitvoer meeopenen
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst
 - **Liederen importeren uit SongSelect (CCLI)**: de tekstbestanden (.txt) en USR-bestanden (.usr) die je zelf met je account downloadt; elk deel wordt een slide en houdt zijn naam (Verse 1, Chorus, …): die staat in de lied-editor als `[Verse 1]` boven het deel en in de slidelijst, maar nooit op het scherm; titel, auteurs en CCLI-nummer worden bewaard en dubbele liederen worden overgeslagen. Er is geen directe koppeling met SongSelect (die is niet beschikbaar voor nieuwe programma's)
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster

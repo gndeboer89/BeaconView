@@ -5,6 +5,7 @@
 #include <QQuickStyle>
 #include <QQuickWindow>
 #include <QTimer>
+#include <QRegularExpression>
 #include "presenter.h"
 #include "videohub.h"
 #include "videothumbnails.h"
@@ -72,6 +73,10 @@ int main(int argc, char *argv[]) {
     if (const QString t = cliValue("--template"); !t.isEmpty()) presenter.templates()->setActive(t);
     // Developer aid: `--passage "Psalm 23:1-4"` adds a Bible passage and shows it.
     if (const QString ref = cliValue("--passage"); !ref.isEmpty()) presenter.addPassage(ref, 2, true, true);
+    // Developer aid: `--add-extra stage|subtitles` adds an extra screen (several allowed: --add-extra stage --add-extra subtitles).
+    for (int i = 0; i + 1 < cli.size(); ++i) if (cli[i] == "--add-extra") presenter.extraScreens()->add(cli[i + 1]);
+    // Developer aid: `--open-extra` opens every extra screen; with `--screenshot` each one is saved as <file>-extra<N>.png.
+    if (args.contains("--open-extra")) for (int i = 0; i < presenter.extraScreens()->rowCount(); ++i) presenter.extraScreens()->set(i, "on", true);
     // Developer aid: `--demo` starts the service and steps through two slides.
     if (args.contains("--demo")) {
         presenter.startService();
@@ -84,6 +89,12 @@ int main(int argc, char *argv[]) {
         QTimer::singleShot(qEnvironmentVariableIntValue("BEACONVIEW_SHOT_DELAY") > 0 ? qEnvironmentVariableIntValue("BEACONVIEW_SHOT_DELAY") : 1500, &app, [&engine, &app, path] {
             auto *w = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
             if (w) w->grabWindow().save(path);
+            int n = 0;
+            for (auto *extra : w ? w->findChildren<QQuickWindow *>() : QList<QQuickWindow *>())
+                if (extra->isVisible() && extra->title().startsWith(QStringLiteral("BeaconView \u2013 "))) {
+                    QString p2 = path; p2.replace(QRegularExpression("\\.png$"), QStringLiteral("-extra%1.png").arg(n++));
+                    extra->grabWindow().save(p2);
+                }
             app.quit();
         });
     }

@@ -4,6 +4,7 @@
 #include <QTimer>
 #include <QUrl>
 #include "bible.h"
+#include "extrascreens.h"
 #include "branding.h"
 #include "overlaycontroller.h"
 #include "servicemodel.h"
@@ -17,6 +18,7 @@ class Presenter : public QObject {
     Q_OBJECT
     Q_PROPERTY(ServiceModel *service READ service CONSTANT)
     Q_PROPERTY(SongLibrary *songs READ songs CONSTANT)
+    Q_PROPERTY(ExtraScreens *extraScreens READ extraScreens CONSTANT)
     Q_PROPERTY(Bible *bible READ bible CONSTANT)
     Q_PROPERTY(TemplateLibrary *templates READ templates CONSTANT)
     Q_PROPERTY(OverlayController *overlays READ overlays CONSTANT)
@@ -68,6 +70,7 @@ public:
 
     ServiceModel *service() { return &m_service; }
     SongLibrary *songs() { return &m_songs; }
+    ExtraScreens *extraScreens() { return &m_extraScreens; }
     Bible *bible() { return &m_bible; }
     TemplateLibrary *templates() { return &m_templates; }
     OverlayController *overlays() { return &m_overlays; }
@@ -186,6 +189,7 @@ private:
 
     ServiceModel m_service;
     SongLibrary m_songs;
+    ExtraScreens m_extraScreens;
     Bible m_bible;
     TemplateLibrary m_templates;
     OverlayController m_overlays;

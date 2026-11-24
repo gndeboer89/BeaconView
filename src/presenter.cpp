@@ -279,7 +279,12 @@ void Presenter::setTextHidden(bool hidden) {
 }
 
 void Presenter::setLogo(bool b) { if (b != m_logo) { m_logo = b; emit logoChanged(); } }
-void Presenter::setOutputOn(bool b) { if (b != m_outputOn) { m_outputOn = b; emit outputOnChanged(); } }
+void Presenter::setOutputOn(bool b) {
+    if (b == m_outputOn) return;
+    m_outputOn = b;
+    emit outputOnChanged();
+    m_extraScreens.setOutputOn(b);      // the extra screens that open with the output follow
+}
 
 void Presenter::setOutputScreen(const QString &s) {
     if (s == m_outputScreen) return;
