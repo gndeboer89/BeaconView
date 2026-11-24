@@ -3,7 +3,7 @@
 Native kerkpresentatiesoftware voor beamer, tv en LED-schermen.
 Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
-## Wat werkt nu (v0.05.202)
+## Wat werkt nu (v0.0.3.0)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
 - **Presentaties**: PDF, PowerPoint (`.pptx`, `.ppt`, `.odp`) en afbeeldingen importeren als slides; elke dia wordt een beeld op het scherm. PDF wordt rechtstreeks gelezen; PowerPoint wordt omgezet met LibreOffice (gratis) of, op Windows en macOS, met PowerPoint zelf. Lukt dat niet, dan staat er hoe je het als PDF exporteert.
 - **Mededelingenlus**: slides (tekst en/of afbeeldingen) die vanzelf wisselen en opnieuw beginnen, met instelbare tijd per slide; pauzeren kan, "Volgende slide" gaat naar het volgende onderdeel
