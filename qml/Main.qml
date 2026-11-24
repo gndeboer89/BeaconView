@@ -18,6 +18,8 @@ ApplicationWindow {
     property int page: 0
     onClosing: Qt.quit()
 
+    VideoEngine { id: videoEngine }
+    ImportDialog {}
     OutputWindow {}
     Component.onCompleted: {   // developer aid: --tab N --query "Joh 3:16"
         win.page = devPage
@@ -29,6 +31,7 @@ ApplicationWindow {
     Shortcut { sequences: ["Left", "PgUp"]; enabled: !win.typing; onActivated: presenter.prevSlide() }
     Shortcut { sequence: "B"; enabled: !win.typing; onActivated: presenter.blackout = !presenter.blackout }
     Shortcut { sequence: "L"; enabled: !win.typing; onActivated: presenter.logo = !presenter.logo }
+    Shortcut { sequence: "T"; enabled: !win.typing; onActivated: presenter.textHidden = !presenter.textHidden }
 
     ColumnLayout {
         anchors.fill: parent; anchors.margins: 12; spacing: 12
@@ -77,7 +80,7 @@ ApplicationWindow {
                     PreviewPanel { Layout.fillWidth: true; Layout.fillHeight: true }
                     SidePanel { id: side; Layout.fillWidth: true; Layout.preferredHeight: 330 }
                 }
-                ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true
+                ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true; video: videoEngine
                     onBibleRequested: side.focusBible()
                     onOverlaysRequested: side.tab = 3 }
             }

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(BeaconView VERSION 0.0.2.0 LANGUAGES CXX)
+project(BeaconView VERSION 0.0.3.0 LANGUAGES CXX)
 if(WIN32)
     enable_language(RC)   # for the application icon (assets/beaconview.rc)
 endif()
@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Multimedia Svg)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Multimedia Svg Pdf)
 qt_standard_project_setup()
 
 qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
@@ -20,6 +20,8 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/templatelibrary.cpp src/templatelibrary.h
     src/overlaycontroller.cpp src/overlaycontroller.h
     src/branding.cpp src/branding.h
+    src/slideimporter.cpp src/slideimporter.h
+    src/videohub.h
 )
 qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
 qt_add_resources(beaconview "assets" PREFIX "/" FILES assets/logo.png assets/icon/icon.png)
@@ -43,6 +45,9 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/Theme.js
     qml/ServicePanel.qml
     qml/SlideEditor.qml
+    qml/VideoEngine.qml
+    qml/VideoOptionsDialog.qml
+    qml/ImportDialog.qml
     qml/PreviewPanel.qml
     qml/ControlPanel.qml
     qml/TemplatesPage.qml
@@ -65,7 +70,7 @@ set_target_properties(beaconview PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
 target_compile_definitions(beaconview PRIVATE APP_VERSION="${PROJECT_VERSION}")
-target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg)
+target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg Qt6::Pdf)
 
 include(GNUInstallDirs)
 install(TARGETS beaconview BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -98,11 +103,16 @@ if(BUILD_TESTING)
     add_test(NAME service COMMAND tst_service)
     qt_add_executable(tst_presenter tests/tst_presenter.cpp
         src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/bible.cpp
-        src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp)
+        src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp src/slideimporter.cpp)
     qt_add_resources(tst_presenter "bible_data" PREFIX "/" FILES data/bible_svv.json)
     target_include_directories(tst_presenter PRIVATE src)
-    target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui)
+    target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui Qt6::Pdf)
     add_test(NAME presenter COMMAND tst_presenter)
+    qt_add_executable(tst_importer tests/tst_importer.cpp src/slideimporter.cpp src/slideimporter.h)
+    target_include_directories(tst_importer PRIVATE src)
+    target_compile_definitions(tst_importer PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
+    target_link_libraries(tst_importer PRIVATE Qt6::Test Qt6::Gui Qt6::Pdf)
+    add_test(NAME importer COMMAND tst_importer)
     qt_add_executable(tst_assets tests/tst_assets.cpp)
     qt_add_resources(tst_assets "assets" PREFIX "/" FILES assets/logo.png assets/icon/icon.png)
     target_link_libraries(tst_assets PRIVATE Qt6::Test Qt6::Gui)

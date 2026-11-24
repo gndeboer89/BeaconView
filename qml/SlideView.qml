@@ -11,6 +11,12 @@ Item {
     property bool blackout: false
     property bool showLogo: false
     property bool animated: false
+    property bool showLiveVideo: false   // draw the video of the live part (output window + main preview only)
+    property bool textHidden: false      // hide the text and reference, keep the background (live output + main preview)
+    property string image: ""            // image slide (PowerPoint/PDF/picture): shown full screen on black
+    readonly property bool hasImage: image !== ""
+    readonly property bool liveVideoOn: showLiveVideo && presenter.liveVideo !== ""
+    readonly property bool plain: hasImage || liveVideoOn   // no background, no dimming: the picture/video is the slide
     property bool showWatermark: false  // small church logo in a corner (live output + main preview)
     // Items can be parented here to draw/edit in 1920x1080 slide coordinates (used by the screen editor)
     property alias editLayer: editLayerItem
@@ -46,7 +52,7 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            visible: Bg.isGradient(root.gradientId)
+            visible: !root.plain && Bg.isGradient(root.gradientId)
             gradient: Gradient {
                 GradientStop { position: 0.0; color: Bg.stops(root.gradientId)[0] }
                 GradientStop { position: 0.55; color: Bg.stops(root.gradientId)[1] }
@@ -55,19 +61,19 @@ Item {
         }
         Image {
             anchors.fill: parent
-            visible: !Bg.isGradient(root.background) && !root.isVideo
+            visible: !root.plain && !Bg.isGradient(root.background) && !root.isVideo
             source: visible ? root.background : ""
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
         }
         Text {   // placeholder for video backgrounds in thumbnails
             anchors.centerIn: parent
-            visible: root.isVideo && (!root.playVideo || root.videoFailed) && root.text === ""
+            visible: !root.plain && root.isVideo && (!root.playVideo || root.videoFailed) && root.text === ""
             text: root.videoFailed ? "⚠" : "▶"; color: "#66ffffff"; font.pixelSize: 260
         }
         Loader {   // silent, looping video
             anchors.fill: parent
-            active: root.isVideo && root.playVideo && !root.videoFailed
+            active: !root.plain && root.isVideo && root.playVideo && !root.videoFailed
             sourceComponent: Item {
                 MediaPlayer {
                     id: player
@@ -84,7 +90,23 @@ Item {
                 VideoOutput { id: video; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectCrop }
             }
         }
-        Rectangle { anchors.fill: parent; color: "#000000"; opacity: Math.min(0.9, root.shownTpl.dim + (root.isVideo ? 0.13 : 0)) }  // keeps text readable
+        Image {   // image slide
+            anchors.fill: parent
+            visible: root.hasImage
+            source: root.hasImage ? root.image : ""
+            fillMode: Image.PreserveAspectFit
+            sourceSize.width: 1920; sourceSize.height: 1080
+            asynchronous: true
+        }
+        VideoOutput {   // the live video; frames come from videoHub
+            id: liveVideoOut
+            anchors.fill: parent
+            visible: root.liveVideoOn
+            fillMode: VideoOutput.PreserveAspectFit
+            Component.onCompleted: if (root.showLiveVideo) videoHub.addTarget(videoSink)
+            Component.onDestruction: if (root.showLiveVideo) videoHub.removeTarget(videoSink)
+        }
+        Rectangle { anchors.fill: parent; color: "#000000"; visible: !root.plain; opacity: Math.min(0.9, root.shownTpl.dim + (root.isVideo ? 0.13 : 0)) }  // keeps text readable
 
         Item {
             id: textLayer
@@ -93,6 +115,8 @@ Item {
                 anchors.fill: parent
                 anchors.margins: root.shownTpl.margin
                 anchors.bottomMargin: root.shownRef !== "" ? Math.max(root.shownTpl.margin, 250) : root.shownTpl.margin
+                opacity: root.textHidden ? 0 : 1
+                Behavior on opacity { NumberAnimation { duration: 200 } }
                 Repeater {
                     model: root.shownTpl.shadow ? 2 : 1     // first a soft shadow copy, then the text itself
                     Text {
@@ -115,6 +139,8 @@ Item {
             }
             Text {   // reference, e.g. "Psalm 23:1-2"
                 visible: root.shownRef !== ""
+                opacity: root.textHidden ? 0 : 1
+                Behavior on opacity { NumberAnimation { duration: 200 } }
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: 1080 - 100 - height
                 text: root.shownRef; color: root.shownTpl.refColor

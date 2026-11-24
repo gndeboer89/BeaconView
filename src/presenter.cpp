@@ -1,5 +1,6 @@
 #include "presenter.h"
 #include <QDateTime>
+#include <algorithm>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -15,6 +16,8 @@ Presenter::Presenter(QObject *parent) : QObject(parent) {
     for (const QString &f : s.value("media").toStringList())
         if (QFileInfo::exists(QUrl(f).toLocalFile())) m_media << f;
 
+    m_loopTimer.setSingleShot(false);
+    connect(&m_loopTimer, &QTimer::timeout, this, &Presenter::loopTick);
     m_saveTimer.setSingleShot(true);
     m_saveTimer.setInterval(600);
     connect(&m_saveTimer, &QTimer::timeout, this, &Presenter::save);
@@ -43,8 +46,14 @@ QString Presenter::dataDir() const {
 QString Presenter::slideAt(int item, int slide) const {
     const ServiceItem *it = m_service.item(item);
     if (!it) return {};
-    if (it->slides.isEmpty()) return slide == 0 ? it->title : QString();
+    if (it->kind == "video") return {};                                   // a video shows no text
+    if (it->slides.isEmpty()) return (slide == 0 && it->images.isEmpty()) ? it->title : QString();
     return (slide >= 0 && slide < it->slides.size()) ? it->slides[slide] : QString();
+}
+
+QString Presenter::imageAt(int item, int slide) const {
+    const ServiceItem *it = m_service.item(item);
+    return (it && slide >= 0 && slide < it->images.size()) ? it->images[slide] : QString();
 }
 
 QString Presenter::refAt(int item, int slide) const {
@@ -71,10 +80,24 @@ QString Presenter::backgroundOf(int item) const {
 
 int Presenter::slideCount() const {
     const ServiceItem *it = m_service.item(m_item);
-    return it ? qMax(1, int(it->slides.size())) : 0;
+    return it ? std::max({1, int(it->slides.size()), int(it->images.size())}) : 0;
 }
 
 QString Presenter::liveText() const { return slideAt(m_item, m_slide); }
+QString Presenter::liveImage() const { return imageAt(m_item, m_slide); }
+QString Presenter::currentKind() const { const ServiceItem *it = m_service.item(m_item); return it ? it->kind : QString(); }
+int Presenter::currentLoopSeconds() const { const ServiceItem *it = m_service.item(m_item); return it ? it->loopSeconds : 0; }
+QString Presenter::liveVideo() const { const ServiceItem *it = m_service.item(m_item); return (it && it->kind == "video") ? it->video : QString(); }
+bool Presenter::liveVideoLoop() const { const ServiceItem *it = m_service.item(m_item); return it && it->videoLoop; }
+bool Presenter::liveVideoNext() const { const ServiceItem *it = m_service.item(m_item); return it && it->videoNext; }
+
+QStringList Presenter::currentImages() const {
+    const ServiceItem *it = m_service.item(m_item);
+    if (!it) return {};
+    QStringList imgs = it->images;
+    while (imgs.size() < currentSlides().size()) imgs << QString();     // text slides have no image
+    return imgs;
+}
 QString Presenter::liveReference() const { return refAt(m_item, m_slide); }
 QString Presenter::liveBackground() const { return backgroundOf(m_item); }
 
@@ -118,14 +141,44 @@ void Presenter::selectItem(int i) {
     const bool otherItem = i != m_item;
     m_item = i;
     m_slide = 0;
+    setTextHidden(false);                     // a new slide shows its text again
+    announceItemChange(otherItem);
+    emit liveChanged();
+    updateLoop();
+}
+
+// Called after the live part changed (or was selected again).
+void Presenter::announceItemChange(bool otherItem) {
     if (otherItem) emit slidesChanged();
+    if (liveVideo() != QString()) emit videoStart();   // a video always starts from the beginning when it goes live
+}
+
+void Presenter::setLoopPaused(bool paused) {
+    if (paused == m_loopPaused) return;
+    m_loopPaused = paused;
+    emit loopChanged();
+    updateLoop();
+}
+
+void Presenter::updateLoop() {
+    const ServiceItem *it = m_service.item(m_item);
+    if (it && it->loopSeconds > 0 && !m_loopPaused && slideCount() > 1) m_loopTimer.start(it->loopSeconds * 1000);
+    else m_loopTimer.stop();
+}
+
+void Presenter::loopTick() {
+    if (slideCount() < 2) return;
+    m_slide = (m_slide + 1) % slideCount();     // the automatic loop wraps around; manual "next" leaves the part
+    setTextHidden(false);
     emit liveChanged();
 }
 
 void Presenter::goToSlide(int slide) {
     if (slide < 0 || slide >= slideCount() || slide == m_slide) return;
     m_slide = slide;
+    setTextHidden(false);
     emit liveChanged();
+    updateLoop();    // a manual jump restarts the interval
 }
 
 void Presenter::nextSlide() {
@@ -139,8 +192,10 @@ void Presenter::nextSlide() {
     } else {
         return;
     }
-    if (otherItem) emit slidesChanged();
+    setTextHidden(false);
+    announceItemChange(otherItem);
     emit liveChanged();
+    updateLoop();
 }
 
 void Presenter::prevSlide() {
@@ -154,8 +209,10 @@ void Presenter::prevSlide() {
     } else {
         return;
     }
-    if (otherItem) emit slidesChanged();
+    setTextHidden(false);
+    announceItemChange(otherItem);
     emit liveChanged();
+    updateLoop();
 }
 
 void Presenter::startService() {
@@ -170,6 +227,7 @@ void Presenter::onModelChanged() {
     if (m_slide >= slideCount()) m_slide = qMax(0, slideCount() - 1);
     emit slidesChanged();
     emit liveChanged();
+    updateLoop();
     scheduleSave();
 }
 
@@ -182,6 +240,12 @@ void Presenter::setServiceName(const QString &n) {
     scheduleSave();
 }
 void Presenter::setBlackout(bool b) { if (b != m_blackout) { m_blackout = b; emit blackoutChanged(); } }
+void Presenter::setTextHidden(bool hidden) {
+    if (hidden == m_textHidden) return;
+    m_textHidden = hidden;
+    emit textHiddenChanged();
+}
+
 void Presenter::setLogo(bool b) { if (b != m_logo) { m_logo = b; emit logoChanged(); } }
 void Presenter::setOutputOn(bool b) { if (b != m_outputOn) { m_outputOn = b; emit outputOnChanged(); } }
 
@@ -211,10 +275,12 @@ QVariantMap Presenter::itemInfo(int i) const {
     const ServiceItem *it = m_service.item(i);
     if (!it) return {};
     return {{"kind", it->kind}, {"title", it->title}, {"subtitle", it->subtitle}, {"background", it->background},
-            {"templateId", it->templateId}, {"slides", it->slides}, {"refs", it->refs}};
+            {"templateId", it->templateId}, {"slides", it->slides}, {"refs", it->refs}, {"images", it->images},
+            {"loopSeconds", it->loopSeconds}, {"video", it->video}, {"videoLoop", it->videoLoop}, {"videoNext", it->videoNext}};
 }
 
-void Presenter::editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides, bool keepRefs) {
+void Presenter::editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides,
+                               const QStringList &images, int loopSeconds, bool keepRefs) {
     const ServiceItem *old = m_service.item(i);
     if (!old) return;
     ServiceItem it = *old;
@@ -222,7 +288,43 @@ void Presenter::editItemSlides(int i, const QString &title, const QString &subti
     it.subtitle = subtitle;
     if (!(keepRefs && slides.size() == it.refs.size())) it.refs.clear();
     it.slides = slides;
+    it.images = images;
+    while (it.images.size() > it.slides.size()) it.slides << QString();   // keep both lists the same length
+    while (it.slides.size() > it.images.size() && !it.images.isEmpty()) it.images << QString();
+    it.loopSeconds = qMax(0, loopSeconds);
     m_service.replace(i, it);
+}
+
+int Presenter::addSlidesItem(const QString &kind, const QString &title, const QStringList &images, int loopSeconds) {
+    ServiceItem it{kind, title, "", {}, QStringList(), {}, {}};
+    it.images = images;
+    for (int n = 0; n < images.size(); ++n) it.slides << QString();
+    it.loopSeconds = qMax(0, loopSeconds);
+    m_service.append(it);
+    return m_service.count() - 1;
+}
+
+int Presenter::addVideo(const QUrl &file) {
+    ServiceItem it{"video", QFileInfo(file.toLocalFile()).completeBaseName(), "", {}, {}, {}, {}};
+    if (it.title.isEmpty()) it.title = QStringLiteral("Video");
+    it.video = file.toString();
+    m_service.append(it);
+    return m_service.count() - 1;
+}
+
+void Presenter::editVideo(int i, const QString &title, const QUrl &file, bool loop, bool next) {
+    const ServiceItem *old = m_service.item(i);
+    if (!old || old->kind != "video") return;
+    ServiceItem it = *old;
+    it.title = title.isEmpty() ? it.title : title;
+    if (file.isValid() && !file.isEmpty()) it.video = file.toString();
+    it.videoLoop = loop;
+    it.videoNext = next;
+    m_service.replace(i, it);
+}
+
+bool Presenter::fileExists(const QString &fileUrl) const {
+    return !fileUrl.isEmpty() && QFileInfo::exists(QUrl(fileUrl).toLocalFile());
 }
 
 void Presenter::addSong(int songIndex) {

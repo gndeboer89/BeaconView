@@ -3,8 +3,12 @@
 Native kerkpresentatiesoftware voor beamer, tv en LED-schermen.
 Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
-## Wat werkt nu (v0.0.2.0)
+## Wat werkt nu (v0.0.3.0)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
+- **Presentaties**: PDF, PowerPoint (`.pptx`, `.ppt`, `.odp`) en afbeeldingen importeren als slides; elke dia wordt een beeld op het scherm. PDF wordt rechtstreeks gelezen; PowerPoint wordt omgezet met LibreOffice (gratis) of, op Windows en macOS, met PowerPoint zelf. Lukt dat niet, dan staat er hoe je het als PDF exporteert.
+- **Mededelingenlus**: slides (tekst en/of afbeeldingen) die vanzelf wisselen en opnieuw beginnen, met instelbare tijd per slide; pauzeren kan, "Volgende slide" gaat naar het volgende onderdeel
+- **Video als eigen onderdeel**: afspelen met geluid, pauzeren, zoeken en volume; optioneel herhalen of na afloop automatisch naar het volgende onderdeel. Het videobestand blijft staan waar het staat (er wordt niets gekopieerd); ontbreekt het, dan zie je een waarschuwing.
+- **Lege slide / alleen achtergrond**: een slide zonder tekst toont alleen de achtergrond; tijdens de dienst haalt **Geen tekst** (of **T**) de tekst van het scherm en laat de achtergrond staan, bij de volgende slide is de tekst er weer
 - **Schermeditor (WYSIWYG)** voor alle onderdelen behalve liederen: typ direct op het scherm met het gekozen template en de echte achtergrond, voeg slides toe/verplaats/verwijder ze, kies template en achtergrond en zie rechts het exacte resultaat
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster
@@ -27,7 +31,7 @@ Bij elke release (tag `v*`) bouwt de CI:
 De pakketten zijn nog niet ondertekend: Windows (SmartScreen) en macOS (Gatekeeper) tonen daarom een waarschuwing bij het eerste openen.
 
 ## Bouwen
-Vereist Qt 6.4+ (Quick, QuickControls2), CMake 3.21+ en een C++17-compiler.
+Vereist Qt 6.4+ (Quick, QuickControls2, Multimedia, Svg, Pdf), CMake 3.21+ en een C++17-compiler. Op Linux heb je voor de bestandsdialogen ook `qml6-module-qt-labs-folderlistmodel` nodig, en voor PowerPoint-import LibreOffice.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

@@ -7,6 +7,7 @@
 #include "branding.h"
 #include "overlaycontroller.h"
 #include "servicemodel.h"
+#include "slideimporter.h"
 #include "songlibrary.h"
 #include "templatelibrary.h"
 
@@ -20,6 +21,7 @@ class Presenter : public QObject {
     Q_PROPERTY(TemplateLibrary *templates READ templates CONSTANT)
     Q_PROPERTY(OverlayController *overlays READ overlays CONSTANT)
     Q_PROPERTY(Branding *branding READ branding CONSTANT)
+    Q_PROPERTY(SlideImporter *importer READ importer CONSTANT)
     Q_PROPERTY(QString serviceName READ serviceName WRITE setServiceName NOTIFY serviceNameChanged)
     Q_PROPERTY(int currentItem READ currentItem NOTIFY liveChanged)
     Q_PROPERTY(int currentSlide READ currentSlide NOTIFY liveChanged)
@@ -28,6 +30,15 @@ class Presenter : public QObject {
     Q_PROPERTY(QStringList currentSlides READ currentSlides NOTIFY slidesChanged)
     Q_PROPERTY(QStringList currentRefs READ currentRefs NOTIFY slidesChanged)
     Q_PROPERTY(QString currentTitle READ currentTitle NOTIFY slidesChanged)
+    Q_PROPERTY(QStringList currentImages READ currentImages NOTIFY slidesChanged)   // image per slide ("" = text slide)
+    Q_PROPERTY(QString currentKind READ currentKind NOTIFY slidesChanged)
+    Q_PROPERTY(int currentLoopSeconds READ currentLoopSeconds NOTIFY slidesChanged) // > 0: this part loops by itself
+    Q_PROPERTY(bool loopPaused READ loopPaused WRITE setLoopPaused NOTIFY loopChanged)
+    Q_PROPERTY(QString liveImage READ liveImage NOTIFY liveChanged)
+    // The video of the part that is live ("" when the live part is not a video)
+    Q_PROPERTY(QString liveVideo READ liveVideo NOTIFY slidesChanged)
+    Q_PROPERTY(bool liveVideoLoop READ liveVideoLoop NOTIFY slidesChanged)
+    Q_PROPERTY(bool liveVideoNext READ liveVideoNext NOTIFY slidesChanged)
     Q_PROPERTY(QString liveText READ liveText NOTIFY liveChanged)
     Q_PROPERTY(QString liveBackground READ liveBackground NOTIFY liveChanged)
     Q_PROPERTY(QString liveReference READ liveReference NOTIFY liveChanged)
@@ -38,11 +49,16 @@ class Presenter : public QObject {
     Q_PROPERTY(QString nextBackground READ nextBackground NOTIFY liveChanged)
     Q_PROPERTY(bool blackout READ blackout WRITE setBlackout NOTIFY blackoutChanged)
     Q_PROPERTY(bool logo READ logo WRITE setLogo NOTIFY logoChanged)
+    // Hides the text (and bible reference) but keeps the background; shows again on the next slide.
+    Q_PROPERTY(bool textHidden READ textHidden WRITE setTextHidden NOTIFY textHiddenChanged)
     Q_PROPERTY(bool outputOn READ outputOn WRITE setOutputOn NOTIFY outputOnChanged)
     Q_PROPERTY(QString outputScreen READ outputScreen WRITE setOutputScreen NOTIFY outputScreenChanged)
     Q_PROPERTY(QString defaultBackground READ defaultBackground WRITE setDefaultBackground NOTIFY defaultBackgroundChanged)
     Q_PROPERTY(QStringList mediaFiles READ mediaFiles NOTIFY mediaFilesChanged)
     Q_PROPERTY(QString lastSaved READ lastSaved NOTIFY savedChanged)
+public slots:
+    void loopTick();        // announcement loop: next slide, wrapping around (called by the timer; public for tests)
+
 public:
     explicit Presenter(QObject *parent = nullptr);
 
@@ -52,6 +68,7 @@ public:
     TemplateLibrary *templates() { return &m_templates; }
     OverlayController *overlays() { return &m_overlays; }
     Branding *branding() { return &m_branding; }
+    SlideImporter *importer() { return &m_importer; }
     QString serviceName() const { return m_name; }
     void setServiceName(const QString &n);
     int currentItem() const { return m_item; }
@@ -60,6 +77,15 @@ public:
     QStringList currentSlides() const;
     QStringList currentRefs() const;
     QString currentTitle() const;
+    QStringList currentImages() const;
+    QString currentKind() const;
+    int currentLoopSeconds() const;
+    bool loopPaused() const { return m_loopPaused; }
+    void setLoopPaused(bool paused);
+    QString liveImage() const;
+    QString liveVideo() const;
+    bool liveVideoLoop() const;
+    bool liveVideoNext() const;
     QString liveText() const;
     QString liveBackground() const;
     QString liveReference() const;
@@ -70,6 +96,8 @@ public:
     QString nextBackground() const;
     bool blackout() const { return m_blackout; }
     void setBlackout(bool b);
+    bool textHidden() const { return m_textHidden; }
+    void setTextHidden(bool hidden);
     bool logo() const { return m_logo; }
     void setLogo(bool b);
     bool outputOn() const { return m_outputOn; }
@@ -86,6 +114,11 @@ public:
     Q_INVOKABLE void nextSlide();
     Q_INVOKABLE void prevSlide();
     Q_INVOKABLE void startService();
+    // A part made of image slides (PowerPoint/PDF/pictures); loopSeconds > 0 makes it an announcement loop.
+    Q_INVOKABLE int addSlidesItem(const QString &kind, const QString &title, const QStringList &images, int loopSeconds);
+    Q_INVOKABLE int addVideo(const QUrl &file);
+    Q_INVOKABLE void editVideo(int i, const QString &title, const QUrl &file, bool loop, bool next);
+    Q_INVOKABLE bool fileExists(const QString &fileUrl) const;
     Q_INVOKABLE int addItem(const QString &kind, const QString &title, const QString &subtitle, const QString &text);   // returns the new index
     Q_INVOKABLE void addSong(int songIndex);
     // Adds a Bible passage as a "scripture" part; returns its index or -1 when the reference is invalid.
@@ -94,7 +127,8 @@ public:
     // Everything the screen editor needs: {kind, title, subtitle, background, templateId, slides, refs}
     Q_INVOKABLE QVariantMap itemInfo(int i) const;
     // Replaces the slides of a part. References (bible) are kept only when keepRefs is set and the slide count is unchanged.
-    Q_INVOKABLE void editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides, bool keepRefs);
+    Q_INVOKABLE void editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides,
+                                    const QStringList &images, int loopSeconds, bool keepRefs);
     Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)
     Q_INVOKABLE void removeItem(int i);
     Q_INVOKABLE void moveItem(int i, int delta);
@@ -108,9 +142,12 @@ public:
 signals:
     void serviceNameChanged();
     void liveChanged();
+    void loopChanged();
+    void videoStart();      // a video part just went live (also when it is selected again): start it from the beginning
     void slidesChanged();   // the list of slides of the current part changed (other part, or edited)
     void blackoutChanged();
     void logoChanged();
+    void textHiddenChanged();
     void outputOnChanged();
     void outputScreenChanged();
     void defaultBackgroundChanged();
@@ -123,6 +160,9 @@ private:
     void scheduleSave();
     void onModelChanged();
     QString slideAt(int item, int slide) const;
+    QString imageAt(int item, int slide) const;
+    void updateLoop();              // (re)start or stop the loop timer for the live part
+    void announceItemChange(bool otherItem);
     QString refAt(int item, int slide) const;
     QVariantMap templateFor(int item) const;
     QString backgroundOf(int item) const;
@@ -134,10 +174,14 @@ private:
     TemplateLibrary m_templates;
     OverlayController m_overlays;
     Branding m_branding;
+    SlideImporter m_importer;
     QString m_name = "Kerkdienst – Zondag";
     int m_item = 0, m_slide = 0;
+    bool m_textHidden = false;
     bool m_blackout = false, m_logo = false, m_outputOn = false;
     QString m_outputScreen, m_defaultBg = "g:sunset", m_lastSaved;
     QStringList m_media;
     QTimer m_saveTimer;
+    QTimer m_loopTimer;
+    bool m_loopPaused = false;
 };
