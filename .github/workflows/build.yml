@@ -9,13 +9,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # All platforms use the same Qt, so video and everything else behave the same everywhere.
+        # (6.8 is no longer patched, and 6.8.3 does not even link on current macOS SDKs: framework 'AGL' not found.)
         include:
           - os: windows-latest
-            qt: 6.8.*
+            qt: 6.11.*
           - os: ubuntu-latest
-            qt: 6.8.*
+            qt: 6.11.*
           - os: macos-latest
-            qt: 6.10.*   # Qt 6.8.3 fails to link on current macOS SDKs (framework 'AGL' not found)
+            qt: 6.11.*
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
