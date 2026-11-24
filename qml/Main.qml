@@ -1,4 +1,5 @@
 import QtQuick
+import QtQml
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import "Theme.js" as T
@@ -21,6 +22,7 @@ ApplicationWindow {
     VideoEngine { id: videoEngine }
     ImportDialog {}
     OutputWindow {}
+    Instantiator { model: presenter.extraScreens; delegate: ExtraWindow {} }   // stage and subtitle screens
     Component.onCompleted: {   // developer aid: --tab N --query "Joh 3:16"
         win.page = devPage
         if (devTab >= 0) { side.tab = devTab; if (devQuery !== "") side.setQuery(devQuery) }

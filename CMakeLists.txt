@@ -16,6 +16,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/servicemodel.cpp src/servicemodel.h
     src/songlibrary.cpp  src/songlibrary.h
     src/songimporter.cpp src/songimporter.h
+    src/extrascreens.cpp src/extrascreens.h
     src/presenter.cpp    src/presenter.h
     src/bible.cpp        src/bible.h
     src/templatelibrary.cpp src/templatelibrary.h
@@ -61,6 +62,9 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/ColorField.qml
     qml/SidePanel.qml
     qml/ScreensPage.qml
+    qml/StageView.qml
+    qml/SubtitleView.qml
+    qml/ExtraWindow.qml
     qml/TextEditorDialog.qml
     qml/OutputWindow.qml
     qml/Placeholder.qml
@@ -105,7 +109,7 @@ if(BUILD_TESTING)
     target_link_libraries(tst_service PRIVATE Qt6::Test)
     add_test(NAME service COMMAND tst_service)
     qt_add_executable(tst_presenter tests/tst_presenter.cpp
-        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/songimporter.cpp src/bible.cpp
+        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/songimporter.cpp src/extrascreens.cpp src/bible.cpp
         src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp src/slideimporter.cpp)
     qt_add_resources(tst_presenter "bible_data" PREFIX "/" FILES data/bible_svv.json)
     target_include_directories(tst_presenter PRIVATE src)
@@ -115,6 +119,10 @@ if(BUILD_TESTING)
     target_include_directories(tst_songimport PRIVATE src)
     target_link_libraries(tst_songimport PRIVATE Qt6::Test Qt6::Core)
     add_test(NAME songimport COMMAND tst_songimport)
+    qt_add_executable(tst_extrascreens tests/tst_extrascreens.cpp src/extrascreens.cpp src/extrascreens.h)
+    target_include_directories(tst_extrascreens PRIVATE src)
+    target_link_libraries(tst_extrascreens PRIVATE Qt6::Test Qt6::Core)
+    add_test(NAME extrascreens COMMAND tst_extrascreens)
     qt_add_executable(tst_importer tests/tst_importer.cpp src/slideimporter.cpp src/slideimporter.h)
     target_include_directories(tst_importer PRIVATE src)
     target_compile_definitions(tst_importer PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
