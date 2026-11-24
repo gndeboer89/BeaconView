@@ -45,6 +45,8 @@ Window {
     SlideView {
         anchors.fill: parent
         tpl: presenter.liveTemplate
+        image: presenter.liveImage
+        showLiveVideo: true
         text: presenter.liveText
         reference: presenter.liveReference
         background: presenter.liveBackground

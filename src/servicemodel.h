@@ -11,6 +11,13 @@ struct ServiceItem {
     QStringList slides;
     QStringList refs;    // optional per-slide reference (e.g. "Psalm 23:1-2"), parallel to slides
     QString templateId;  // own template for this part; empty = use the active template
+    // Image slides (PowerPoint/PDF/pictures): file URL per slide, "" = a normal text slide. Parallel to `slides`.
+    QStringList images;
+    int loopSeconds = 0; // > 0: slides advance by themselves every N seconds and wrap around (announcement loop)
+    // Kind "video": the part is one video file.
+    QString video;       // file URL
+    bool videoLoop = false;   // start over when it ends
+    bool videoNext = false;   // go to the next part when it ends
 };
 
 // Ordered list of parts ("onderdelen") that make up a church service.

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
+import QtQuick.Dialogs
 import "Theme.js" as T
 
 Rectangle {
@@ -13,7 +14,7 @@ Rectangle {
         { kind: "offering", title: "Collecte" }, { kind: "blessing", title: "Zegen" },
         { kind: "custom", title: "Eigen tekst…" }
     ]
-    function glyph(k) { return k === "song" ? "♪" : k === "scripture" ? "▤" : "●" }
+    function glyph(k) { return k === "song" ? "♪" : k === "scripture" ? "▤" : k === "slides" ? "▦" : k === "loop" ? "↻" : k === "video" ? "▶" : "●" }
 
     ColumnLayout {
         anchors.fill: parent; anchors.margins: 14; spacing: 12
@@ -59,6 +60,10 @@ Rectangle {
                         Text { text: title; color: T.text; font.pixelSize: 15; elide: Text.ElideRight; Layout.fillWidth: true }
                         Text { visible: subtitle !== ""; text: subtitle; color: T.muted; font.pixelSize: 13; elide: Text.ElideRight; Layout.fillWidth: true }
                     }
+                    Text {   // video file is gone (USB stick, moved file)
+                        visible: kind === "video" && !presenter.fileExists(presenter.itemInfo(index).video)
+                        text: "⚠"; color: T.danger; font.pixelSize: 16
+                    }
                     Text {   // this part has its own template; the name is shown as a tooltip
                         id: tplIcon
                         visible: templateId !== "" && presenter.templates.contains(templateId)
@@ -87,8 +92,10 @@ Rectangle {
             editIndex = i
             editor.heading = "Lied bewerken"
             editor.openWith(info.title, info.subtitle, presenter.itemText(i))
+        } else if (info.kind === "video") {
+            videoOptions.openFor(i)
         } else {
-            slideEditor.openFor(i, false)
+            slideEditor.openFor(i, false)   // text, presentation and loop parts
         }
     }
     Component.onCompleted: if (devEdit >= 0) openEditor(devEdit)   // developer aid: --edit N
@@ -123,6 +130,10 @@ Rectangle {
     }
     Menu {
         id: addMenu
+        MenuItem { text: "Presentatie (PowerPoint/PDF)…"; onTriggered: presentationDialog.open() }
+        MenuItem { text: "Mededelingenlus…"; onTriggered: slideEditor.openFor(presenter.addSlidesItem("loop", "Mededelingen", [], 10), true) }
+        MenuItem { text: "Video…"; onTriggered: videoDialog.open() }
+        MenuSeparator {}
         Repeater {
             model: root.kinds
             MenuItem {
@@ -140,6 +151,27 @@ Rectangle {
     }
 
     SlideEditor { id: slideEditor }
+    VideoOptionsDialog { id: videoOptions; onConfirmed: function (i, t, f, l, n) { presenter.editVideo(i, t, f, l, n) } }
+
+    FileDialog {
+        id: presentationDialog
+        title: "Kies een presentatie, PDF of afbeeldingen"
+        fileMode: FileDialog.OpenFiles
+        nameFilters: [presenter.importer.supportedFilter(), "Alle bestanden (*)"]
+        onAccepted: presenter.importer.importFiles("new-slides", selectedFiles)
+    }
+    FileDialog {
+        id: videoDialog
+        title: "Kies een video"
+        nameFilters: ["Video's (*.mp4 *.m4v *.mov *.webm *.mkv *.avi *.wmv)", "Alle bestanden (*)"]
+        onAccepted: presenter.addVideo(selectedFile)
+    }
+    Connections {
+        target: presenter.importer
+        function onFinished(tag, images, title) {
+            if (tag === "new-slides") presenter.addSlidesItem("slides", title, images, 0)
+        }
+    }
 
     TextEditorDialog {
         id: editor

@@ -18,6 +18,8 @@ ApplicationWindow {
     property int page: 0
     onClosing: Qt.quit()
 
+    VideoEngine { id: videoEngine }
+    ImportDialog {}
     OutputWindow {}
     Component.onCompleted: {   // developer aid: --tab N --query "Joh 3:16"
         win.page = devPage
@@ -77,7 +79,7 @@ ApplicationWindow {
                     PreviewPanel { Layout.fillWidth: true; Layout.fillHeight: true }
                     SidePanel { id: side; Layout.fillWidth: true; Layout.preferredHeight: 330 }
                 }
-                ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true
+                ControlPanel { Layout.preferredWidth: 340; Layout.fillHeight: true; video: videoEngine
                     onBibleRequested: side.focusBible()
                     onOverlaysRequested: side.tab = 3 }
             }

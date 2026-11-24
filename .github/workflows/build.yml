@@ -22,7 +22,7 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: ${{ matrix.qt }}
-          modules: qtmultimedia
+          modules: qtmultimedia qtpdf
           cache: true
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=${{ runner.os == 'Linux' && 'ON' || 'OFF' }}

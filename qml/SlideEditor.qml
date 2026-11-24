@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Window
+import QtQuick.Dialogs
 import "Theme.js" as T
 
 // WYSIWYG screen editor for every part except songs: the text is typed directly on the slide,
@@ -18,6 +19,8 @@ Dialog {
     property bool hasRefs: false
     property string draftTemplate: ""       // "" = the default for this kind of part
     property string draftBackground: ""     // "" = the default background
+    property int draftLoop: 0               // > 0: slides advance by themselves every N seconds
+    readonly property string curImage: cur < slidesModel.count ? (slidesModel.get(cur).image || "") : ""
 
     readonly property var tpl: resolve(draftTemplate)
     readonly property string bg: draftBackground !== "" ? draftBackground : presenter.defaultBackground
@@ -36,12 +39,14 @@ Dialog {
         var info = presenter.itemInfo(i)
         itemIndex = i; isNew = fresh; saved = false; kind = info.kind; structureChanged = false
         titleField.text = info.title; subField.text = info.subtitle
-        draftTemplate = info.templateId; draftBackground = info.background
+        draftTemplate = info.templateId; draftBackground = info.background; draftLoop = info.loopSeconds
         hasRefs = info.refs.length > 0
         slidesModel.clear()
-        var s = info.slides
-        if (s.length === 0) s = [""]
-        for (var k = 0; k < s.length; ++k) slidesModel.append({ text: s[k] })
+        var s = info.slides, imgs = info.images
+        if (s.length === 0 && imgs.length === 0) s = [""]
+        var n = Math.max(s.length, imgs.length)
+        for (var k = 0; k < n; ++k)
+            slidesModel.append({ text: k < s.length ? s[k] : "", image: k < imgs.length ? imgs[k] : "" })
         selectSlide(0)
         open()
     }
@@ -50,18 +55,17 @@ Dialog {
         cur = i
         ta.text = slidesModel.get(i).text
         loading = false
-        ta.forceActiveFocus()
-        ta.cursorPosition = ta.length
+        if (!slidesModel.get(i).image) { ta.forceActiveFocus(); ta.cursorPosition = ta.length }
     }
     function save() {
-        var arr = []
+        var arr = [], imgs = []
         for (var k = 0; k < slidesModel.count; ++k) {
-            var t = slidesModel.get(k).text
-            if (t.trim() !== "") arr.push(t)
+            var t = slidesModel.get(k).text, im = slidesModel.get(k).image || ""
+            if (t.trim() !== "" || im !== "") { arr.push(t); imgs.push(im) }   // empty slides are dropped
         }
         var keep = hasRefs && !structureChanged && arr.length === slidesModel.count
         var title = titleField.text.trim() !== "" ? titleField.text.trim() : "Onderdeel"
-        presenter.editItemSlides(itemIndex, title, subField.text.trim(), arr, keep)
+        presenter.editItemSlides(itemIndex, title, subField.text.trim(), arr, imgs, draftLoop, keep)
         presenter.setItemTemplate(itemIndex, draftTemplate)
         presenter.setItemBackground(itemIndex, draftBackground)
         saved = true
@@ -84,6 +88,24 @@ Dialog {
     onOpened: { ta.forceActiveFocus(); ta.cursorPosition = ta.length }
 
     ListModel { id: slidesModel }
+
+    FileDialog {
+        id: addFilesDialog
+        title: "Kies een presentatie, PDF of afbeeldingen"
+        fileMode: FileDialog.OpenFiles
+        nameFilters: [presenter.importer.supportedFilter(), "Alle bestanden (*)"]
+        onAccepted: presenter.importer.importFiles("editor", selectedFiles)
+    }
+    Connections {
+        target: presenter.importer
+        function onFinished(tag, images) {
+            if (tag !== "editor" || !dlg.opened) return
+            var at = dlg.cur + 1
+            for (var k = 0; k < images.length; ++k) slidesModel.insert(at + k, { text: "", image: images[k] })
+            dlg.structureChanged = true
+            dlg.selectSlide(at)
+        }
+    }
 
     contentItem: ColumnLayout {
         spacing: 12
@@ -114,7 +136,7 @@ Dialog {
                     delegate: Rectangle {
                         width: strip.width - 10; height: width * 9 / 16 + 6; radius: 6; color: "transparent"
                         border.color: index === dlg.cur ? T.accent : T.border; border.width: index === dlg.cur ? 2 : 1
-                        SlideView { anchors.fill: parent; anchors.margins: 3; tpl: dlg.tpl; background: dlg.bg; text: model.text }
+                        SlideView { anchors.fill: parent; anchors.margins: 3; tpl: dlg.tpl; background: dlg.bg; text: model.text; image: model.image || "" }
                         Text { x: 8; y: 4; text: index + 1; color: "white"; font.pixelSize: 11; font.bold: true; style: Text.Outline; styleColor: "#aa000000" }
                         TapHandler { onTapped: dlg.selectSlide(index) }
                     }
@@ -122,7 +144,7 @@ Dialog {
                 RowLayout {
                     Layout.fillWidth: true; spacing: 4
                     AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; implicitHeight: 32; leftPadding: 4; rightPadding: 4; text: "+ Slide"
-                        onClicked: { dlg.structureChanged = true; slidesModel.insert(dlg.cur + 1, { text: "" }); dlg.selectSlide(dlg.cur + 1) } }
+                        onClicked: { dlg.structureChanged = true; slidesModel.insert(dlg.cur + 1, { text: "", image: "" }); dlg.selectSlide(dlg.cur + 1) } }
                     AppButton { implicitHeight: 32; implicitWidth: 34; leftPadding: 0; rightPadding: 0; text: "▲"; enabled: dlg.cur > 0
                         onClicked: { dlg.structureChanged = true; slidesModel.move(dlg.cur, dlg.cur - 1, 1); dlg.cur = dlg.cur - 1 } }
                     AppButton { implicitHeight: 32; implicitWidth: 34; leftPadding: 0; rightPadding: 0; text: "▼"; enabled: dlg.cur < slidesModel.count - 1
@@ -130,6 +152,8 @@ Dialog {
                     AppButton { implicitHeight: 32; implicitWidth: 34; leftPadding: 0; rightPadding: 0; text: "✕"; enabled: slidesModel.count > 1
                         onClicked: { dlg.structureChanged = true; slidesModel.remove(dlg.cur); dlg.selectSlide(Math.min(dlg.cur, slidesModel.count - 1)) } }
                 }
+                AppButton { Layout.fillWidth: true; Layout.minimumWidth: 0; implicitHeight: 32; leftPadding: 4; rightPadding: 4
+                    text: "+ PowerPoint / PDF / afbeeldingen…"; onClicked: addFilesDialog.open() }
             }
 
             // ---- the editable slide ---------------------------------------------------------
@@ -142,7 +166,7 @@ Dialog {
                         id: canvas
                         anchors.centerIn: parent
                         width: Math.min(holder.width, holder.height * 16 / 9); height: width * 9 / 16
-                        tpl: dlg.tpl; background: dlg.bg; text: ""
+                        tpl: dlg.tpl; background: dlg.bg; text: ""; image: dlg.curImage
                         reference: ""
 
                         // invisible twin of the slide text: tells us the font size the slide will really use
@@ -163,6 +187,7 @@ Dialog {
                         TextArea {
                             id: ta
                             parent: canvas.editLayer
+                            visible: dlg.curImage === ""
                             x: dlg.tpl.margin; y: dlg.tpl.margin
                             width: 1920 - 2 * dlg.tpl.margin
                             height: 1080 - dlg.tpl.margin - (dlg.hasRefs ? Math.max(dlg.tpl.margin, 250) : dlg.tpl.margin)
@@ -201,8 +226,26 @@ Dialog {
                         anchors.fill: parent; anchors.margins: 2
                         tpl: dlg.tpl; background: dlg.bg
                         text: dlg.cur < slidesModel.count ? slidesModel.get(dlg.cur).text : ""
+                        image: dlg.curImage
                         reference: ""
                     }
+                }
+
+                ColumnLayout {   // automatic loop (announcement loop / presentation that runs by itself)
+                    visible: dlg.kind === "loop" || dlg.kind === "slides"
+                    Layout.fillWidth: true; Layout.topMargin: 4; spacing: 4
+                    Text { text: "Automatisch doorlopen"; color: T.muted; font.pixelSize: 12 }
+                    RowLayout {
+                        Layout.fillWidth: true; spacing: 8
+                        AppButton { text: dlg.draftLoop > 0 ? "Aan" : "Uit"; active: dlg.draftLoop > 0; implicitHeight: 32; implicitWidth: 58
+                            onClicked: dlg.draftLoop = dlg.draftLoop > 0 ? 0 : 10 }
+                        SpinBox { from: 2; to: 300; value: dlg.draftLoop > 0 ? dlg.draftLoop : 10; enabled: dlg.draftLoop > 0
+                            implicitWidth: 120; font.pixelSize: 13
+                            textFromValue: function (v) { return v + " sec" }
+                            onValueModified: dlg.draftLoop = value }
+                    }
+                    Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 11
+                        text: dlg.draftLoop > 0 ? "De slides wisselen vanzelf en beginnen opnieuw. \"Volgende slide\" gaat naar het volgende onderdeel." : "Slides wisselen alleen als jij op Volgende klikt." }
                 }
 
                 Text { Layout.topMargin: 6; text: "Template"; color: T.muted; font.pixelSize: 12 }

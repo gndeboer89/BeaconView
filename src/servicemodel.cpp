@@ -65,7 +65,9 @@ QJsonArray ServiceModel::toJson() const {
     for (const auto &it : m_items) {
         arr.append(QJsonObject{{"kind", it.kind}, {"title", it.title}, {"subtitle", it.subtitle},
                                {"background", it.background}, {"slides", QJsonArray::fromStringList(it.slides)},
-                               {"refs", QJsonArray::fromStringList(it.refs)}, {"template", it.templateId}});
+                               {"refs", QJsonArray::fromStringList(it.refs)}, {"template", it.templateId},
+                               {"images", QJsonArray::fromStringList(it.images)}, {"loopSeconds", it.loopSeconds},
+                               {"video", it.video}, {"videoLoop", it.videoLoop}, {"videoNext", it.videoNext}});
     }
     return arr;
 }
@@ -79,6 +81,11 @@ void ServiceModel::fromJson(const QJsonArray &arr) {
                        o["background"].toString(), {}, {}, o["template"].toString()};
         for (const auto &s : o["slides"].toArray()) it.slides << s.toString();
         for (const auto &s : o["refs"].toArray()) it.refs << s.toString();
+        for (const auto &s : o["images"].toArray()) it.images << s.toString();
+        it.loopSeconds = o["loopSeconds"].toInt();
+        it.video = o["video"].toString();
+        it.videoLoop = o["videoLoop"].toBool();
+        it.videoNext = o["videoNext"].toBool();
         m_items.append(it);
     }
     endResetModel();

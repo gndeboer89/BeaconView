@@ -32,6 +32,22 @@ private slots:
         QCOMPARE(m.count(), 1);
         QVERIFY(m.item(0)->templateId.isEmpty());
     }
+    void imagesLoopAndVideoRoundTrip() {
+        ServiceModel m;
+        ServiceItem it{"loop", "Mededelingen", "", {}, {"", ""}, {}, {}};
+        it.images = {"file:///a.png", "file:///b.png"};
+        it.loopSeconds = 12;
+        ServiceItem v{"video", "Film", "", {}, {}, {}, {}};
+        v.video = "file:///film.mp4"; v.videoLoop = true; v.videoNext = true;
+        m.append(it); m.append(v);
+
+        ServiceModel copy;
+        copy.fromJson(m.toJson());
+        QCOMPARE(copy.item(0)->images, (QStringList{"file:///a.png", "file:///b.png"}));
+        QCOMPARE(copy.item(0)->loopSeconds, 12);
+        QCOMPARE(copy.item(1)->video, QStringLiteral("file:///film.mp4"));
+        QVERIFY(copy.item(1)->videoLoop && copy.item(1)->videoNext);
+    }
     void replaceKeepsTemplateWhenSet() {
         ServiceModel m;
         m.append({"custom", "T", "", {}, {"a"}, {}, "builtin:caps"});

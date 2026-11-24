@@ -6,6 +6,7 @@
 #include <QQuickWindow>
 #include <QTimer>
 #include "presenter.h"
+#include "videohub.h"
 
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
@@ -17,8 +18,10 @@ int main(int argc, char *argv[]) {
     QQuickStyle::setStyle("Basic");
 
     Presenter presenter;
+    VideoHub videoHub;      // must outlive the QML engine: components still use it while they are torn down
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("presenter", &presenter);
+    engine.rootContext()->setContextProperty("videoHub", &videoHub);
     const QStringList cli = app.arguments();
     auto cliValue = [&cli](const QString &key) { int i = cli.indexOf(key); return (i >= 0 && i + 1 < cli.size()) ? cli[i + 1] : QString(); };
     engine.rootContext()->setContextProperty("devTab", cliValue("--tab").isEmpty() ? -1 : cliValue("--tab").toInt());
@@ -49,6 +52,17 @@ int main(int argc, char *argv[]) {
         presenter.branding()->chooseLogo(QUrl::fromLocalFile(f));
         if (args.contains("--watermark")) presenter.branding()->setWatermark(true);
     }
+    // Developer aids: `--import-slides file` imports a PDF/PowerPoint/picture as a new part and goes live on it,
+    // `--add-video file` adds a video part and goes live on it, `--add-loop` adds an (empty) announcement loop.
+    if (const QString f = cliValue("--import-slides"); !f.isEmpty()) {
+        QObject::connect(presenter.importer(), &SlideImporter::finished, &app, [&presenter] {
+            QTimer::singleShot(300, &presenter, [&presenter] { presenter.selectItem(presenter.service()->count() - 1); });
+        });
+        presenter.importer()->importFiles("new-slides", {QUrl::fromLocalFile(f)});
+    }
+    if (const QString f = cliValue("--add-video"); !f.isEmpty()) presenter.selectItem(presenter.addVideo(QUrl::fromLocalFile(f)));
+    // Developer aid: `--then-text Title` adds a text part after the other adds (to test "continue after the video").
+    if (const QString t = cliValue("--then-text"); !t.isEmpty()) presenter.addItem("prayer", t, "", t);
     // Developer aid: `--page N` opens a top-level page (0 = Dienst, 2 = Templates, ...), `--template id` activates a template.
     if (const QString t = cliValue("--template"); !t.isEmpty()) presenter.templates()->setActive(t);
     // Developer aid: `--passage "Psalm 23:1-4"` adds a Bible passage and shows it.
