@@ -422,6 +422,14 @@ void Presenter::editItem(int i, const QString &title, const QString &subtitle, c
     m_service.replace(i, it);
 }
 
+QVariantList Presenter::songPreview(const QString &lyrics, const QString &order) const {
+    QStringList slides, labels;
+    ServiceModel::expandOrder(lyrics, ServiceModel::parseOrder(order), &slides, &labels);
+    QVariantList out;
+    for (int i = 0; i < slides.size(); ++i) out << QVariantMap{{"label", labels.value(i)}, {"text", slides[i]}};
+    return out;
+}
+
 QString Presenter::itemOrder(int i) const {
     const ServiceItem *it = m_service.item(i);
     return it ? ServiceModel::joinOrder(it->order) : QString();

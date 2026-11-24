@@ -66,6 +66,8 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/ColorField.qml
     qml/SidePanel.qml
     qml/ScreensPage.qml
+    qml/SongsPage.qml
+    qml/SongImport.qml
     qml/ReportPage.qml
     qml/StageView.qml
     qml/SubtitleView.qml

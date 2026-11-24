@@ -13,16 +13,10 @@ Rectangle {
     color: T.panel; radius: 12; border.color: T.border
     clip: true
     property int tab: 0   // 0 = media, 1 = liederen, 2 = bijbel, 3 = overlays
-    property int songEdit: -1
+    signal editSongRequested(int row)     // open the song in the editor page (-1: a new song)
     property var bibleResult: ({ ok: false, bookFound: false, error: "", verses: [] })
     property var bibleHits: []
 
-    Component.onCompleted: if (devSong >= 0 && devSong < presenter.songs.rowCount()) {   // developer aid: --edit-song N
-        var m = presenter.songs
-        root.songEdit = devSong; songEditor.heading = "Lied bewerken"
-        songEditor.openWith(m.data(m.index(devSong, 0), 257), "", m.data(m.index(devSong, 0), 259), m.data(m.index(devSong, 0), 263),
-                            m.data(m.index(devSong, 0), 264), m.data(m.index(devSong, 0), 265))
-    }
     function focusBible() { tab = 2; refField.forceActiveFocus(); refField.selectAll() }
     function setQuery(q) { refField.text = q }
     function refreshBible() {
@@ -55,8 +49,7 @@ Rectangle {
             }
             AppButton { visible: root.tab === 0; implicitHeight: 34; text: "Importeren…"; onClicked: fileDialog.open() }
             AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Importeren…"; onClicked: songImport.open() }
-            AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Nieuw lied…"
-                onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "", "", "", []) } }
+            AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Nieuw lied…"; onClicked: root.editSongRequested(-1) }
         }
 
         StackLayout {
@@ -171,8 +164,7 @@ Rectangle {
                             }
                             AppButton { text: "+  Aan dienst"; implicitHeight: 34; onClicked: presenter.addSong(presenter.songFilter.sourceRow(index)) }
                             AppButton { text: "✎"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
-                                onClicked: { root.songEdit = presenter.songFilter.sourceRow(index); songEditor.heading = "Lied bewerken"
-                                    songEditor.openWith(title, number, lyrics, order, category, tags) } }
+                                onClicked: root.editSongRequested(presenter.songFilter.sourceRow(index)) }
                         }
                     }
                 }
@@ -275,51 +267,5 @@ Rectangle {
         nameFilters: ["Afbeeldingen en video's (*.png *.jpg *.jpeg *.webp *.bmp *.mp4 *.m4v *.mov *.webm *.mkv)", "Alle bestanden (*)"]
         onAccepted: presenter.importMedia(selectedFile)
     }
-    FileDialog {
-        id: songImport
-        title: "Kies liedteksten uit SongSelect (.txt of .usr)"
-        fileMode: FileDialog.OpenFiles
-        nameFilters: ["Liedteksten (*.txt *.usr)", "Alle bestanden (*)"]
-        onAccepted: {
-            var r = presenter.songs.importFiles(selectedFiles)
-            var parts = []
-            if (r.added > 0) parts.push(r.added + (r.added === 1 ? " lied toegevoegd" : " liederen toegevoegd"))
-            if (r.existing > 0) parts.push(r.existing + (r.existing === 1 ? " stond er al in" : " stonden er al in"))
-            if (r.failed > 0) parts.push(r.failed + (r.failed === 1 ? " bestand kon niet worden gelezen" : " bestanden konden niet worden gelezen"))
-            importResult.text = parts.join(";  ")
-            importResult.detail = r.failed > 0 ? "Gebruik het tekstbestand (.txt) of het USR-bestand (.usr) van SongSelect." : (r.titles.length > 0 ? r.titles.join("\n") : "")
-            importResult.open()
-        }
-    }
-    Dialog {
-        id: importResult
-        property string text: ""
-        property string detail: ""
-        modal: true
-        property bool reparented: false
-        onAboutToShow: if (!reparented && parent && parent.Window.window) { reparented = true; parent = parent.Window.window.contentItem }
-        x: parent ? Math.round((parent.width - width) / 2) : 0
-        y: parent ? Math.round((parent.height - height) / 2) : 0
-        width: 460; padding: 20
-        background: Rectangle { color: T.panel; radius: 12; border.color: T.border }
-        contentItem: ColumnLayout {
-            spacing: 12
-            Text { text: "Liederen importeren"; color: T.text; font.pixelSize: 20; font.bold: true }
-            Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.text; font.pixelSize: 14; text: importResult.text }
-            Text { visible: importResult.detail !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 13; text: importResult.detail }
-            AppButton { Layout.alignment: Qt.AlignRight; text: "OK"; primary: true; onClicked: importResult.close() }
-        }
-    }
-    TextEditorDialog {
-        id: songEditor
-        subtitleLabel: "Liednummer (optioneel)"
-        showOrder: true
-        showMeta: true
-        orderLabel: "Standaardvolgorde van de delen, bijvoorbeeld: Couplet 1, Refrein, Couplet 2, Refrein (komt elk deel één keer in de tekst, dan hoef je het refrein maar één keer te typen)"
-        bodyLabel: "Tekst: een lege regel = nieuwe slide. Een regel als [Couplet 1] boven een deel is de naam van dat deel (komt niet op het scherm)"
-        onConfirmed: function (t, s, b) {
-            if (root.songEdit >= 0) presenter.songs.update(root.songEdit, t, s, b, songEditor.orderValue, songEditor.categoryValue, songEditor.tagsValue)
-            else presenter.songs.add(t, s, b, songEditor.orderValue, songEditor.categoryValue, songEditor.tagsValue)
-        }
-    }
+    SongImport { id: songImport }
 }

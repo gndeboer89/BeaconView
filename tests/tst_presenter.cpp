@@ -138,6 +138,15 @@ private slots:
         p.addSong(src);                                                    // "Aan dienst" uses the row in the library
         QCOMPARE(p.service()->item(p.service()->count() - 1)->subtitle, QStringLiteral("Aanbidding"));
     }
+    void songPreviewFollowsTheOrder() {
+        Presenter p;
+        const QVariantList pv = p.songPreview("[Couplet 1]\nregel 1\n\n[Refrein]\nrefrein", "Couplet 1, Refrein, Couplet 1");
+        QCOMPARE(pv.size(), 3);
+        QCOMPARE(pv[1].toMap()["label"].toString(), QStringLiteral("Refrein"));
+        QCOMPARE(pv[2].toMap()["text"].toString(), QStringLiteral("regel 1"));
+        QCOMPARE(p.songPreview("[Couplet 1]\nregel 1\n\n[Refrein]\nrefrein", "").size(), 2);        // no order: as written
+        QVERIFY(p.songPreview("", "x").isEmpty());
+    }
     void songOrderStandardAndOwn() {
         Presenter p;
         p.service()->fromJson(QJsonArray());

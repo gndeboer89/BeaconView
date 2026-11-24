@@ -26,6 +26,10 @@ public:
     Q_INVOKABLE void update(int i, const QString &title, const QString &number, const QString &lyrics, const QString &order = QString(),
                             const QString &category = QString(), const QStringList &tags = {});
     Q_INVOKABLE void remove(int i);
+    // All fields of one song: {title, number, lyrics, order, category, tags, author, ccli, copyright}; empty map for a wrong row.
+    Q_INVOKABLE QVariantMap get(int i) const;
+    // Author and CCLI number of a song (the editor of the page changes them next to update()).
+    Q_INVOKABLE void setCredits(int i, const QString &author, const QString &ccli);
     // Adds songs from SongSelect downloads (.txt, .usr). Returns {added, existing, failed} (counts) and
     // `titles` (the added songs). A song that is already there (same CCLI number, or same title and text) is skipped.
     Q_INVOKABLE QVariantMap importFiles(const QList<QUrl> &files);

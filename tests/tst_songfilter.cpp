@@ -70,6 +70,30 @@ private slots:
         lib.remove(f.sourceRow(0));
         QCOMPARE(f.rowCount(), 0);
     }
+    void getAndCredits() {
+        QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)).removeRecursively();
+        SongLibrary lib;
+        lib.add("Lied", "7", "[Refrein]\ntekst", "Refrein, Refrein", "Opwekking", {"Kerst"});
+        const int r = lib.rowCount() - 1;
+        QVariantMap m = lib.get(r);
+        QCOMPARE(m["title"].toString(), QStringLiteral("Lied"));
+        QCOMPARE(m["number"].toString(), QStringLiteral("7"));
+        QCOMPARE(m["order"].toString(), QStringLiteral("Refrein, Refrein"));
+        QCOMPARE(m["category"].toString(), QStringLiteral("Opwekking"));
+        QCOMPARE(m["tags"].toStringList(), (QStringList{"Kerst"}));
+        QVERIFY(lib.get(-1).isEmpty());
+        QVERIFY(lib.get(999).isEmpty());
+        lib.setCredits(r, "  Jan   de Vries ", "CCLI 12 34");                 // the number keeps only its digits
+        QCOMPARE(lib.get(r)["author"].toString(), QStringLiteral("Jan de Vries"));
+        QCOMPARE(lib.get(r)["ccli"].toString(), QStringLiteral("1234"));
+        lib.update(r, "Lied 2", "7", "tekst", "", "", {});                   // editing the text keeps the credits
+        QCOMPARE(lib.get(r)["ccli"].toString(), QStringLiteral("1234"));
+        lib.setCredits(r, "", "");                                            // and they can be cleared
+        QVERIFY(lib.get(r)["ccli"].toString().isEmpty());
+        lib.setCredits(99, "x", "1");                                         // wrong row: nothing happens
+        SongLibrary again;
+        QCOMPARE(again.get(r)["title"].toString(), QStringLiteral("Lied 2"));
+    }
     void categoriesAndTags() {
         QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)).removeRecursively();
         QStringList seenMeta;

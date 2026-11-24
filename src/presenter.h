@@ -151,6 +151,8 @@ public:
     Q_INVOKABLE void editItemSlides(int i, const QString &title, const QString &subtitle, const QStringList &slides,
                                     const QStringList &images, int loopSeconds, bool keepRefs);
     Q_INVOKABLE QStringList partNames(const QString &text) const { return ServiceModel::partNames(text); }   // names usable in an order
+    // The slides that a song text gives in an order, as [{label, text}] (for the preview in the song editor).
+    Q_INVOKABLE QVariantList songPreview(const QString &lyrics, const QString &order) const;
     Q_INVOKABLE QString itemOrder(int i) const;          // the order this part uses, as text
     Q_INVOKABLE QString itemDefaultOrder(int i) const;   // the standard order of the song
     Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)

@@ -118,6 +118,23 @@ void SongLibrary::update(int i, const QString &title, const QString &number, con
     emit metaChanged();
 }
 
+QVariantMap SongLibrary::get(int i) const {
+    if (i < 0 || i >= m_songs.size()) return {};
+    const Song &s = m_songs[i];
+    return {{"title", s.title}, {"number", s.number}, {"lyrics", s.lyrics}, {"order", s.order}, {"category", s.category},
+            {"tags", s.tags}, {"author", s.author}, {"ccli", s.ccli}, {"copyright", s.copyright}};
+}
+
+void SongLibrary::setCredits(int i, const QString &author, const QString &ccli) {
+    if (i < 0 || i >= m_songs.size()) return;
+    Song &s = m_songs[i];
+    const QString a = author.simplified(), c = QString(ccli).remove(QRegularExpression("\\D"));   // a CCLI number is digits
+    if (s.author == a && s.ccli == c) return;
+    s.author = a; s.ccli = c;
+    emit dataChanged(index(i), index(i), {AuthorRole, CcliRole});
+    save();
+}
+
 void SongLibrary::setCategory(const QList<int> &rows, const QString &category) {
     const QString cat = canonicalCategory(category);
     for (int r : rows) {
