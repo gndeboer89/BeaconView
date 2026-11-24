@@ -82,4 +82,4 @@ jobs:
         with:
           name: BeaconView ${{ github.ref_name }}
           prerelease: true
-          files: artifacts/*
+          files: artifacts/**
