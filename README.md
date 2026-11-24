@@ -3,7 +3,7 @@
 Native kerkpresentatiesoftware voor beamer, tv en LED-schermen.
 Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
-## Wat werkt nu (v0.1.2.0)
+## Wat werkt nu (v0.1.3.0)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
 - **Media-bibliotheek** (tab Media): alle achtergronden, afbeeldingen en video's in één overzicht met miniaturen (bij video's het eerste beeld), filteren, meerdere bestanden tegelijk importeren, voorbeeld en gegevens, gebruiken als achtergrond van het huidige onderdeel of als standaardachtergrond, een video als video-onderdeel toevoegen, en **verwijderen** (alleen je eigen kopie in de app; verwijzingen worden opgeruimd)
 - **Presentaties**: PDF, PowerPoint (`.pptx`, `.ppt`, `.odp`) en afbeeldingen importeren als slides; elke dia wordt een beeld op het scherm. PDF wordt rechtstreeks gelezen; PowerPoint wordt omgezet met LibreOffice (gratis) of, op Windows en macOS, met PowerPoint zelf. Lukt dat niet, dan staat er hoe je het als PDF exporteert.
@@ -22,6 +22,8 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - **Eigen logo** (Instellingen): PNG, SVG of JPG als logo-scherm (met eigen achtergrondkleur en grootte) en als optioneel watermerk in een hoek van elke slide
 - **Templates**: lettertype, grootte, kleur, uitlijning, schaduw, regelafstand, marge, verduistering en bijbelverwijzing; 5 ingebouwde templates, eigen templates via dupliceren; het actieve template geldt voor de hele dienst, een standaardtemplate per soort onderdeel (Templates → Per onderdeel), en elk onderdeel kan een eigen template krijgen (⋮ → Template)
 - **Bijbel** (Statenvertaling): typ een verwijzing (`Joh 3:16`, `1 Kor 13:4-7`, `Psalm 23`) of zoek op een woord; kies het aantal verzen per slide en de verwijzing staat onderaan elke slide
+- Laadscherm bij het opstarten (het programma start soms een paar seconden); de duur van elke opstartfase staat in het logbestand (Instellingen → Problemen oplossen)
+- Het programma kan maar één keer tegelijk draaien: nog een keer starten haalt het open venster naar voren
 - Automatisch opslaan van dienst en liederen
 
 ## Logo en iconen

@@ -1,16 +1,22 @@
+#include <QElapsedTimer>
+#include <QEventLoop>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
+#include <QQuickItem>
+#include <QQuickView>
 #include <QQuickWindow>
 #include <QTimer>
 #include <QRegularExpression>
 #include "presenter.h"
+#include "singleinstance.h"
 #include "videohub.h"
 #include "videothumbnails.h"
 
 int main(int argc, char *argv[]) {
+    QElapsedTimer startup; startup.start();
     QGuiApplication app(argc, argv);
     app.setOrganizationName("BeaconView");
     app.setApplicationName("BeaconView");
@@ -19,7 +25,37 @@ int main(int argc, char *argv[]) {
     // "Basic" is the same on every OS, so the UI looks identical on Windows/macOS/Linux.
     QQuickStyle::setStyle("Basic");
 
+    // The developer aids below (screenshots) start several copies and run without a visible window: no single-copy check, no splash.
+    const bool devRun = app.arguments().contains("--screenshot") || app.arguments().contains("--no-splash")
+                        || QGuiApplication::platformName() == "offscreen";
+
+    // Only one copy at a time: a second start just brings the first one to the front.
+    SingleInstance single("BeaconView");
+    if (!devRun && !single.isPrimary()) return 0;
+
+    // Loading takes a few seconds on some computers: show a start-up screen at once, before anything heavy happens.
+    std::unique_ptr<QQuickView> splash;
+    if (!devRun) {
+        splash = std::make_unique<QQuickView>(QUrl("qrc:/qml/Splash.qml"));
+        splash->setResizeMode(QQuickView::SizeRootObjectToView);
+        splash->setFlags(Qt::SplashScreen | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+        splash->setTitle("BeaconView");
+        splash->resize(520, 320);
+        if (QScreen *sc = QGuiApplication::primaryScreen()) splash->setPosition(sc->geometry().center() - QPoint(260, 160));
+        splash->show();
+        QEventLoop wait;                                   // let the first frame appear before the heavy work blocks the thread
+        QObject::connect(splash.get(), &QQuickWindow::frameSwapped, &wait, &QEventLoop::quit);
+        QTimer::singleShot(600, &wait, &QEventLoop::quit);
+        wait.exec();
+    }
+    auto setStatus = [&splash, &app](const QString &text) {
+        if (splash && splash->rootObject()) { splash->rootObject()->setProperty("status", text); app.processEvents(); }
+    };
+    setStatus("Instellingen en bijbel laden…");
+
     Presenter presenter;
+    presenter.log(QStringLiteral("Opstarten: gegevens geladen na %1 ms").arg(startup.elapsed()));
+    setStatus("Scherm opbouwen…");
     VideoHub videoHub;      // must outlive the QML engine: components still use it while they are torn down
     VideoThumbnails videoThumbs;
     QQmlApplicationEngine engine;
@@ -35,6 +71,27 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("devPage", cliValue("--page").isEmpty() ? 0 : cliValue("--page").toInt());
     engine.load(QUrl("qrc:/qml/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
+    presenter.log(QStringLiteral("Opstarten: scherm opgebouwd na %1 ms").arg(startup.elapsed()));
+    if (auto *mainWin = qobject_cast<QQuickWindow *>(engine.rootObjects().first())) {
+        // A second start of the program brings this window to the front.
+        QObject::connect(&single, &SingleInstance::activated, mainWin, [mainWin] {
+            mainWin->setWindowStates(mainWin->windowStates() & ~Qt::WindowMinimized);
+            mainWin->show();
+            mainWin->raise();
+            mainWin->requestActivate();
+        });
+        // The start-up screen goes away when the first picture of the program is on screen.
+        if (splash) {
+            QQuickView *sp = splash.release();
+            auto closeSplash = [sp, &presenter, &startup] {
+                presenter.log(QStringLiteral("Opstarten: eerste beeld na %1 ms").arg(startup.elapsed()));
+                sp->hide();
+                sp->deleteLater();
+            };
+            QObject::connect(mainWin, &QQuickWindow::frameSwapped, sp, closeSplash, Qt::SingleShotConnection);
+            QTimer::singleShot(15000, sp, [sp] { sp->hide(); });   // never stay behind if that picture does not come
+        }
+    }
 
     const QStringList args = app.arguments();
     // Developer aid: `--import file` adds a file to the media library.

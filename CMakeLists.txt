@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(BeaconView VERSION 0.1.2.0 LANGUAGES CXX)
+project(BeaconView VERSION 0.1.3.0 LANGUAGES CXX)
 if(WIN32)
     enable_language(RC)   # for the application icon (assets/beaconview.rc)
 endif()
@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Quick QuickControls2 Multimedia Svg Pdf)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Network Quick QuickControls2 Multimedia Svg Pdf)
 qt_standard_project_setup()
 
 qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
@@ -17,6 +17,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/songlibrary.cpp  src/songlibrary.h
     src/songimporter.cpp src/songimporter.h
     src/extrascreens.cpp src/extrascreens.h
+    src/singleinstance.cpp src/singleinstance.h
     src/presenter.cpp    src/presenter.h
     src/bible.cpp        src/bible.h
     src/templatelibrary.cpp src/templatelibrary.h
@@ -42,6 +43,7 @@ endif()
 
 qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/Main.qml
+    qml/Splash.qml
     qml/SlideView.qml
     qml/AppButton.qml
     qml/Backgrounds.js
@@ -77,7 +79,7 @@ set_target_properties(beaconview PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
 target_compile_definitions(beaconview PRIVATE APP_VERSION="${PROJECT_VERSION}")
-target_link_libraries(beaconview PRIVATE Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg Qt6::Pdf)
+target_link_libraries(beaconview PRIVATE Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg Qt6::Pdf)
 
 include(GNUInstallDirs)
 install(TARGETS beaconview BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -123,6 +125,10 @@ if(BUILD_TESTING)
     target_include_directories(tst_extrascreens PRIVATE src)
     target_link_libraries(tst_extrascreens PRIVATE Qt6::Test Qt6::Core)
     add_test(NAME extrascreens COMMAND tst_extrascreens)
+    qt_add_executable(tst_singleinstance tests/tst_singleinstance.cpp src/singleinstance.cpp src/singleinstance.h)
+    target_include_directories(tst_singleinstance PRIVATE src)
+    target_link_libraries(tst_singleinstance PRIVATE Qt6::Test Qt6::Network)
+    add_test(NAME singleinstance COMMAND tst_singleinstance)
     qt_add_executable(tst_importer tests/tst_importer.cpp src/slideimporter.cpp src/slideimporter.h)
     target_include_directories(tst_importer PRIVATE src)
     target_compile_definitions(tst_importer PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
