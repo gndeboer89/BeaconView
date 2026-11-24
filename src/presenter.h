@@ -29,6 +29,7 @@ class Presenter : public QObject {
     // All slides of the current part, so the operator can click any of them
     Q_PROPERTY(QStringList currentSlides READ currentSlides NOTIFY slidesChanged)
     Q_PROPERTY(QStringList currentRefs READ currentRefs NOTIFY slidesChanged)
+    Q_PROPERTY(QStringList currentLabels READ currentLabels NOTIFY slidesChanged)   // names of the slides of a song ("Verse 1")
     Q_PROPERTY(QString currentTitle READ currentTitle NOTIFY slidesChanged)
     Q_PROPERTY(QStringList currentImages READ currentImages NOTIFY slidesChanged)   // image per slide ("" = text slide)
     Q_PROPERTY(QString currentKind READ currentKind NOTIFY slidesChanged)
@@ -79,6 +80,7 @@ public:
     int slideCount() const;
     QStringList currentSlides() const;
     QStringList currentRefs() const;
+    QStringList currentLabels() const;
     QString currentTitle() const;
     QStringList currentImages() const;
     QString currentKind() const;

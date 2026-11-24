@@ -10,6 +10,7 @@ Dialog {
     id: dlg
     property string heading: ""
     property string subtitleLabel: "Ondertitel"
+    property string bodyLabel: "Tekst (een lege regel = nieuwe slide)"
     signal confirmed(string title, string subtitle, string body)
 
     function openWith(t, s, b) {
@@ -37,7 +38,7 @@ Dialog {
         Text { text: dlg.subtitleLabel; color: T.muted; font.pixelSize: 12 }
         TextField { id: subField; Layout.fillWidth: true; color: T.text; selectByMouse: true
             background: Rectangle { color: T.card; radius: 6; border.color: subField.activeFocus ? T.accent : T.border } }
-        Text { text: "Tekst (een lege regel = nieuwe slide)"; color: T.muted; font.pixelSize: 12 }
+        Text { text: dlg.bodyLabel; color: T.muted; font.pixelSize: 12; Layout.fillWidth: true; wrapMode: Text.WordWrap }
         ScrollView {
             Layout.fillWidth: true; Layout.fillHeight: true
             TextArea { id: bodyArea; color: T.text; selectByMouse: true; wrapMode: TextEdit.Wrap

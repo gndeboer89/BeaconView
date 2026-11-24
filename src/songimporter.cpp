@@ -23,27 +23,29 @@ static QString normalise(QString t) {
     return t;
 }
 
-// A line that only names a part of the song ("Verse 1", "Chorus", "Refrein", "[Bridge]", "Chorus (x2)").
-static bool isSectionLabel(const QString &line) {
+// A line that only names a part of the song ("Verse 1", "Chorus", "Refrein", "[Bridge]", "Chorus (x2)"): returns the name, else "".
+static QString sectionLabel(const QString &line) {
     static const QRegularExpression re(
-        R"(^\s*[\[(]?\s*(verse|chorus|pre[- ]?chorus|bridge|intro|outro|tag|ending|interlude|refrain|couplet|refrein|brug|coda|instrumental|vers|slot|inleiding)\s*\d*\s*[\])]?\s*(\(?\s*x\s*\d+\s*\)?)?\s*:?\s*$)",
+        R"(^\s*[\[(]?\s*((?:verse|chorus|pre[- ]?chorus|bridge|intro|outro|tag|ending|interlude|refrain|couplet|refrein|brug|coda|instrumental|vers|slot|inleiding)(?:\s*\d+)?)\s*[\])]?\s*(\(?\s*x\s*\d+\s*\)?)?\s*:?\s*$)",
         QRegularExpression::CaseInsensitiveOption);
-    return re.match(line).hasMatch();
+    const auto m = re.match(line);
+    if (!m.hasMatch()) return {};
+    QString name = m.captured(1).simplified();
+    if (!m.captured(2).isEmpty()) name += " (" + m.captured(2).remove(QRegularExpression(R"([()\s])")).toLower() + ")";
+    return name;
 }
 
-// Joins lines into slides: part labels are dropped, a blank line stays the slide separator.
+// Joins lines into slides. A blank line is the slide separator; the name of a part becomes a line "[Verse 1]" above
+// its text (the song editor shows it, the output does not).
 static QString lyricsFrom(const QStringList &lines) {
     QStringList out;
+    QString pending;
+    auto endBlock = [&] { if (!out.isEmpty() && !out.last().isEmpty()) out << QString(); };
     for (const QString &raw : lines) {
         const QString line = raw.trimmed();
-        if (isSectionLabel(line)) {
-            if (!out.isEmpty() && !out.last().isEmpty()) out << QString();   // a new part starts a new slide
-            continue;
-        }
-        if (line.isEmpty()) {
-            if (!out.isEmpty() && !out.last().isEmpty()) out << QString();
-            continue;
-        }
+        if (const QString name = sectionLabel(line); !name.isEmpty()) { endBlock(); pending = name; continue; }
+        if (line.isEmpty()) { endBlock(); continue; }
+        if (!pending.isEmpty()) { out << "[" + pending + "]"; pending.clear(); }
         out << line;
     }
     while (!out.isEmpty() && out.last().isEmpty()) out.removeLast();
@@ -94,11 +96,13 @@ QList<ImportedSong> parseUsr(const QString &input) {
         if (!inSong) return;
         const QStringList names = fields.split("/t"), parts = words.split("/t");
         QStringList blocks;
-        for (const QString &p : parts) {
-            const QString b = lyricsFrom(QString(p).replace("/n", "\n").split('\n'));
-            if (!b.isEmpty()) blocks << b;
+        for (int i = 0; i < parts.size(); ++i) {
+            QString b = lyricsFrom(QString(parts[i]).replace("/n", "\n").split('\n'));
+            if (b.isEmpty()) continue;
+            const QString name = i < names.size() ? names[i].simplified() : QString();
+            if (!name.isEmpty() && !b.startsWith('[')) b = "[" + name + "]\n" + b;   // the Fields line names each part
+            blocks << b;
         }
-        Q_UNUSED(names)
         cur.lyrics = blocks.join("\n\n");
         cur.author.replace('/', ", ");
         if (cur.isValid()) songs << cur;

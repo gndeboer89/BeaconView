@@ -246,6 +246,7 @@ Rectangle {
     TextEditorDialog {
         id: songEditor
         subtitleLabel: "Liednummer (optioneel)"
+        bodyLabel: "Tekst: een lege regel = nieuwe slide. Een regel als [Couplet 1] boven een deel is de naam van dat deel (komt niet op het scherm)"
         onConfirmed: function (t, s, b) {
             if (root.songEdit >= 0) presenter.songs.update(root.songEdit, t, s, b)
             else presenter.songs.add(t, s, b)

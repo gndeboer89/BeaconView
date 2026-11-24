@@ -60,10 +60,10 @@ private slots:
         QCOMPARE(s.ccli, QStringLiteral("4768151"));
         QCOMPARE(s.author, QStringLiteral("John Newton, Edwin Excell"));
         QVERIFY(s.copyright.contains("Public Domain"));
-        // part labels are gone; each part is a slide (a blank line), also when the file had no blank line before a label
-        QCOMPARE(s.lyrics, QStringLiteral("Amazing grace how sweet the sound\nThat saved a wretch like me\n\n"
-                                          "My chains are gone\nI've been set free\n\n"
-                                          "T'was grace that taught\nmy heart to fear"));
+        // the part names stay as "[...]" lines; each part is a slide (a blank line), also when the file had no blank line before a label
+        QCOMPARE(s.lyrics, QStringLiteral("[Verse 1]\nAmazing grace how sweet the sound\nThat saved a wretch like me\n\n"
+                                          "[Chorus]\nMy chains are gone\nI've been set free\n\n"
+                                          "[Verse 2]\nT'was grace that taught\nmy heart to fear"));
         QVERIFY(!s.lyrics.contains("CCLI"));
         QVERIFY(!s.lyrics.contains("For use solely"));
     }
@@ -73,9 +73,9 @@ private slots:
         QCOMPARE(songs[0].title, QStringLiteral("Amazing Grace"));
         QCOMPARE(songs[0].ccli, QStringLiteral("4768151"));
         QCOMPARE(songs[0].author, QStringLiteral("John Newton, Edwin Excell"));
-        QCOMPARE(songs[0].lyrics, QStringLiteral("Amazing grace how sweet the sound\nThat saved a wretch like me\n\n"
-                                                 "My chains are gone\nI've been set free\n\n"
-                                                 "T'was grace that taught\nmy heart to fear"));
+        QCOMPARE(songs[0].lyrics, QStringLiteral("[Verse 1]\nAmazing grace how sweet the sound\nThat saved a wretch like me\n\n"
+                                                 "[Chorus]\nMy chains are gone\nI've been set free\n\n"
+                                                 "[Verse 2]\nT'was grace that taught\nmy heart to fear"));
         // the content decides, not the extension
         QCOMPARE(SongImporter::parse(QByteArray(kUsr), "song.txt").size(), 1);
     }
@@ -89,7 +89,7 @@ private slots:
     void dutchLabelsAndEncodings() {
         const QString text = QStringLiteral("Genade\nCouplet 1\nGenade, zo groot\n\nRefrein (x2)\nOnze God is goed\n");
         auto songs = SongImporter::parseText(text);
-        QCOMPARE(songs[0].lyrics, QStringLiteral("Genade, zo groot\n\nOnze God is goed"));
+        QCOMPARE(songs[0].lyrics, QStringLiteral("[Couplet 1]\nGenade, zo groot\n\n[Refrein (x2)]\nOnze God is goed"));
         // UTF-8 with BOM, UTF-16 with BOM and Latin-1 (Windows) all give the same accents
         const QString accent = QStringLiteral("Vrede\nGenade voor ons één\n");
         QCOMPARE(SongImporter::decode("\xEF\xBB\xBF" + accent.toUtf8()), accent);
