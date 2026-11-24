@@ -5,6 +5,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
 ## Wat werkt nu (v0.0.3.0)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
+- **Media-bibliotheek** (tab Media): alle achtergronden, afbeeldingen en video's in één overzicht met miniaturen (bij video's het eerste beeld), filteren, meerdere bestanden tegelijk importeren, voorbeeld en gegevens, gebruiken als achtergrond van het huidige onderdeel of als standaardachtergrond, een video als video-onderdeel toevoegen, en **verwijderen** (alleen je eigen kopie in de app; verwijzingen worden opgeruimd)
 - **Presentaties**: PDF, PowerPoint (`.pptx`, `.ppt`, `.odp`) en afbeeldingen importeren als slides; elke dia wordt een beeld op het scherm. PDF wordt rechtstreeks gelezen; PowerPoint wordt omgezet met LibreOffice (gratis) of, op Windows en macOS, met PowerPoint zelf. Lukt dat niet, dan staat er hoe je het als PDF exporteert.
 - **Mededelingenlus**: slides (tekst en/of afbeeldingen) die vanzelf wisselen en opnieuw beginnen, met instelbare tijd per slide; pauzeren kan, "Volgende slide" gaat naar het volgende onderdeel
 - **Video start betrouwbaar**: de video wordt pas afgespeeld als het bestand klaar is, staat de video direct na het huidige onderdeel dan wordt hij al voorgeladen (starten duurt dan een fractie van een seconde), en lukt het niet dan volgt een duidelijke melding. Wat er gebeurt staat in een logbestand (Instellingen → Problemen oplossen).

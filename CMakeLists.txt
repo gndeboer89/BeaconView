@@ -22,6 +22,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/branding.cpp src/branding.h
     src/slideimporter.cpp src/slideimporter.h
     src/videohub.h
+    src/videothumbnails.cpp src/videothumbnails.h
 )
 qt_add_resources(beaconview "bible_data" PREFIX "/" FILES data/bible_svv.json)
 qt_add_resources(beaconview "assets" PREFIX "/" FILES assets/logo.png assets/icon/icon.png)
@@ -48,6 +49,7 @@ qt_add_resources(beaconview "qml" PREFIX "/" FILES
     qml/VideoEngine.qml
     qml/VideoOptionsDialog.qml
     qml/ImportDialog.qml
+    qml/MediaPage.qml
     qml/PreviewPanel.qml
     qml/ControlPanel.qml
     qml/TemplatesPage.qml
@@ -113,6 +115,11 @@ if(BUILD_TESTING)
     target_compile_definitions(tst_importer PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
     target_link_libraries(tst_importer PRIVATE Qt6::Test Qt6::Gui Qt6::Pdf)
     add_test(NAME importer COMMAND tst_importer)
+    qt_add_executable(tst_thumbnails tests/tst_thumbnails.cpp src/videothumbnails.cpp src/videothumbnails.h)
+    target_include_directories(tst_thumbnails PRIVATE src)
+    target_compile_definitions(tst_thumbnails PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
+    target_link_libraries(tst_thumbnails PRIVATE Qt6::Test Qt6::Gui Qt6::Multimedia)
+    add_test(NAME thumbnails COMMAND tst_thumbnails)
     qt_add_executable(tst_assets tests/tst_assets.cpp)
     qt_add_resources(tst_assets "assets" PREFIX "/" FILES assets/logo.png assets/icon/icon.png)
     target_link_libraries(tst_assets PRIVATE Qt6::Test Qt6::Gui)

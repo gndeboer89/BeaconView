@@ -145,6 +145,11 @@ public:
     Q_INVOKABLE QString itemTemplate(int i) const;
     Q_INVOKABLE QString defaultTemplateName(int i) const;   // what the part uses when it has no template of its own
     Q_INVOKABLE void importMedia(const QUrl &file);
+    // Removes an imported file from the library: deletes our copy (never anything outside the app's media folder)
+    // and clears every reference to it (default background, part backgrounds).
+    Q_INVOKABLE void removeMedia(const QString &url);
+    Q_INVOKABLE QVariantMap mediaInfo(const QString &url) const;     // {name, kind: image|video, size, sizeText, exists}
+    Q_INVOKABLE QVariantMap mediaUsage(const QString &url) const;    // {parts, isDefault}: where it is used
     Q_INVOKABLE void save();
 
 signals:

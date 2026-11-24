@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QLocale>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
@@ -408,6 +409,35 @@ void Presenter::importMedia(const QUrl &file) {
     m_media << QUrl::fromLocalFile(dst).toString();
     QSettings().setValue("media", m_media);
     emit mediaFilesChanged();
+}
+
+void Presenter::removeMedia(const QString &url) {
+    if (!m_media.contains(url)) return;
+    m_media.removeAll(url);
+    QSettings().setValue("media", m_media);
+    const QString path = QUrl(url).toLocalFile();
+    if (!path.isEmpty() && path.startsWith(dataDir() + "/media/")) QFile::remove(path);   // only our own copy
+    for (int i = 0; i < m_service.count(); ++i)
+        if (m_service.item(i)->background == url) m_service.setBackground(i, QString());   // back to the default
+    if (m_defaultBg == url) setDefaultBackground(QStringLiteral("g:sunset"));
+    emit mediaFilesChanged();
+    emit liveChanged();
+}
+
+QVariantMap Presenter::mediaInfo(const QString &url) const {
+    static const QStringList videoExt = {"mp4", "m4v", "mov", "webm", "mkv", "avi", "wmv"};
+    const QFileInfo fi(QUrl(url).toLocalFile());
+    return {{"name", fi.fileName()}, {"kind", videoExt.contains(fi.suffix().toLower()) ? "video" : "image"},
+            {"size", fi.size()}, {"sizeText", QLocale().formattedDataSize(fi.size(), 1)}, {"exists", fi.exists()}};
+}
+
+QVariantMap Presenter::mediaUsage(const QString &url) const {
+    int parts = 0;
+    for (int i = 0; i < m_service.count(); ++i) {
+        const ServiceItem *it = m_service.item(i);
+        if (it->background == url || (it->kind == "video" && it->video == url)) ++parts;
+    }
+    return {{"parts", parts}, {"isDefault", m_defaultBg == url}};
 }
 
 // ---- persistence ----------------------------------------------------------
