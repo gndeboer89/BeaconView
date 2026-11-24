@@ -16,9 +16,9 @@ jobs:
           - os: windows-latest
             qt: 6.10.*
           - os: ubuntu-latest
-            qt: 6.12.*
+            qt: 6.11.*
           - os: macos-latest
-            qt: 6.12.*
+            qt: 6.11.*
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
