@@ -65,6 +65,11 @@ Rectangle {
                         Layout.alignment: Qt.AlignTop; Layout.preferredWidth: 16 }
                     ColumnLayout {
                         Layout.fillWidth: true; spacing: 2
+                        Text {   // name of this part of a song ("Verse 1"); only here, never on the output
+                            readonly property string name: presenter.currentLabels[index] !== undefined ? presenter.currentLabels[index] : ""
+                            visible: name !== ""; Layout.fillWidth: true; text: name
+                            color: row.live ? T.accent : T.muted; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight
+                        }
                         Rectangle {   // thumbnail of an image slide
                             visible: row.img !== ""
                             Layout.fillWidth: true; Layout.preferredHeight: parent.width * 9 / 16

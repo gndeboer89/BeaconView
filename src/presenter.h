@@ -29,6 +29,7 @@ class Presenter : public QObject {
     // All slides of the current part, so the operator can click any of them
     Q_PROPERTY(QStringList currentSlides READ currentSlides NOTIFY slidesChanged)
     Q_PROPERTY(QStringList currentRefs READ currentRefs NOTIFY slidesChanged)
+    Q_PROPERTY(QStringList currentLabels READ currentLabels NOTIFY slidesChanged)   // names of the slides of a song ("Verse 1")
     Q_PROPERTY(QString currentTitle READ currentTitle NOTIFY slidesChanged)
     Q_PROPERTY(QStringList currentImages READ currentImages NOTIFY slidesChanged)   // image per slide ("" = text slide)
     Q_PROPERTY(QString currentKind READ currentKind NOTIFY slidesChanged)
@@ -79,6 +80,7 @@ public:
     int slideCount() const;
     QStringList currentSlides() const;
     QStringList currentRefs() const;
+    QStringList currentLabels() const;
     QString currentTitle() const;
     QStringList currentImages() const;
     QString currentKind() const;
@@ -140,6 +142,7 @@ public:
     Q_INVOKABLE QString itemText(int i) const;  // slides joined by blank lines (for the editor)
     Q_INVOKABLE void removeItem(int i);
     Q_INVOKABLE void moveItem(int i, int delta);
+    Q_INVOKABLE void moveItemTo(int from, int to);     // drag and drop: the part ends up at index `to`
     Q_INVOKABLE void setItemBackground(int i, const QString &bg);
     Q_INVOKABLE void setItemTemplate(int i, const QString &templateId);  // "" = use the active template
     Q_INVOKABLE QString itemTemplate(int i) const;

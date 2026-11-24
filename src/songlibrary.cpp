@@ -1,4 +1,5 @@
 #include "songlibrary.h"
+#include "songimporter.h"
 #include <QDir>
 #include <QFile>
 #include <QJsonArray>
@@ -21,12 +22,16 @@ QVariant SongLibrary::data(const QModelIndex &index, int role) const {
     case TitleRole: return s.title;
     case NumberRole: return s.number;
     case LyricsRole: return s.lyrics;
+    case AuthorRole: return s.author;
+    case CcliRole: return s.ccli;
+    case CopyrightRole: return s.copyright;
     }
     return {};
 }
 
 QHash<int, QByteArray> SongLibrary::roleNames() const {
-    return {{TitleRole, "title"}, {NumberRole, "number"}, {LyricsRole, "lyrics"}};
+    return {{TitleRole, "title"}, {NumberRole, "number"}, {LyricsRole, "lyrics"},
+            {AuthorRole, "author"}, {CcliRole, "ccli"}, {CopyrightRole, "copyright"}};
 }
 
 void SongLibrary::add(const QString &title, const QString &number, const QString &lyrics) {
@@ -38,7 +43,8 @@ void SongLibrary::add(const QString &title, const QString &number, const QString
 
 void SongLibrary::update(int i, const QString &title, const QString &number, const QString &lyrics) {
     if (i < 0 || i >= m_songs.size()) return;
-    m_songs[i] = {title, number, lyrics};
+    Song &s = m_songs[i];            // the credits (author, CCLI number) are not edited here and stay
+    s.title = title; s.number = number; s.lyrics = lyrics;
     emit dataChanged(index(i), index(i));
     save();
 }
@@ -56,7 +62,8 @@ void SongLibrary::load() {
     if (f.open(QIODevice::ReadOnly)) {
         for (const auto &v : QJsonDocument::fromJson(f.readAll()).array()) {
             const QJsonObject o = v.toObject();
-            m_songs.append({o["title"].toString(), o["number"].toString(), o["lyrics"].toString()});
+            m_songs.append({o["title"].toString(), o["number"].toString(), o["lyrics"].toString(),
+                            o["author"].toString(), o["ccli"].toString(), o["copyright"].toString()});
         }
         return;
     }
@@ -72,7 +79,34 @@ void SongLibrary::load() {
 void SongLibrary::save() const {
     QJsonArray arr;
     for (const Song &s : m_songs)
-        arr.append(QJsonObject{{"title", s.title}, {"number", s.number}, {"lyrics", s.lyrics}});
+        arr.append(QJsonObject{{"title", s.title}, {"number", s.number}, {"lyrics", s.lyrics},
+                               {"author", s.author}, {"ccli", s.ccli}, {"copyright", s.copyright}});
     QFile f(path());
     if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) f.write(QJsonDocument(arr).toJson());
+}
+
+QVariantMap SongLibrary::importFiles(const QList<QUrl> &files) {
+    int added = 0, existing = 0, failed = 0;
+    QStringList titles;
+    for (const QUrl &url : files) {
+        QFile f(url.toLocalFile());
+        QList<ImportedSong> found;
+        if (f.open(QIODevice::ReadOnly)) found = SongImporter::parse(f.readAll(), url.fileName());
+        if (found.isEmpty()) { ++failed; continue; }
+        for (const ImportedSong &in : found) {
+            bool dup = false;
+            for (const Song &s : std::as_const(m_songs)) {
+                if ((!in.ccli.isEmpty() && s.ccli == in.ccli)
+                    || (s.title.compare(in.title, Qt::CaseInsensitive) == 0 && s.lyrics.trimmed() == in.lyrics.trimmed())) { dup = true; break; }
+            }
+            if (dup) { ++existing; continue; }
+            beginInsertRows({}, m_songs.size(), m_songs.size());
+            m_songs.append({in.title, QString(), in.lyrics, in.author, in.ccli, in.copyright});
+            endInsertRows();
+            titles << in.title;
+            ++added;
+        }
+    }
+    if (added) save();
+    return {{"added", added}, {"existing", existing}, {"failed", failed}, {"titles", titles}};
 }

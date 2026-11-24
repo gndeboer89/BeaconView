@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
 import QtQuick.Dialogs
+import QtQuick.Window
 import "Theme.js" as T
 import "Backgrounds.js" as Bg
 
@@ -47,6 +48,7 @@ Rectangle {
                 contentItem: Text { text: applyAll.text; color: T.muted; font.pixelSize: 13; leftPadding: applyAll.indicator.width + 8; verticalAlignment: Text.AlignVCenter }
             }
             AppButton { visible: root.tab === 0; implicitHeight: 34; text: "Importeren…"; onClicked: fileDialog.open() }
+            AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Importeren…"; onClicked: songImport.open() }
             AppButton { visible: root.tab === 1; implicitHeight: 34; text: "Nieuw lied…"
                 onClicked: { root.songEdit = -1; songEditor.heading = "Nieuw lied"; songEditor.openWith("", "", "") } }
         }
@@ -91,8 +93,16 @@ Rectangle {
                     width: songList.width - 8; height: 46; radius: 8; color: T.card
                     RowLayout {
                         anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 6; spacing: 6
-                        Text { Layout.fillWidth: true; text: (number !== "" ? number + "  " : "") + title
-                            color: T.text; font.pixelSize: 14; elide: Text.ElideRight }
+                        ColumnLayout {
+                            Layout.fillWidth: true; spacing: 0
+                            Text { Layout.fillWidth: true; text: (number !== "" ? number + "  " : "") + title
+                                color: T.text; font.pixelSize: 14; elide: Text.ElideRight }
+                            Text {   // credits of an imported song
+                                visible: ccli !== "" || author !== ""
+                                Layout.fillWidth: true; color: T.muted; font.pixelSize: 11; elide: Text.ElideRight
+                                text: (ccli !== "" ? "CCLI " + ccli : "") + (ccli !== "" && author !== "" ? "  ·  " : "") + author
+                            }
+                        }
                         AppButton { text: "+  Aan dienst"; implicitHeight: 34; onClicked: presenter.addSong(index) }
                         AppButton { text: "✎"; flat: true; implicitWidth: 34; implicitHeight: 34; leftPadding: 0; rightPadding: 0
                             onClicked: { root.songEdit = index; songEditor.heading = "Lied bewerken"
@@ -198,9 +208,45 @@ Rectangle {
         nameFilters: ["Afbeeldingen en video's (*.png *.jpg *.jpeg *.webp *.bmp *.mp4 *.m4v *.mov *.webm *.mkv)", "Alle bestanden (*)"]
         onAccepted: presenter.importMedia(selectedFile)
     }
+    FileDialog {
+        id: songImport
+        title: "Kies liedteksten uit SongSelect (.txt of .usr)"
+        fileMode: FileDialog.OpenFiles
+        nameFilters: ["Liedteksten (*.txt *.usr)", "Alle bestanden (*)"]
+        onAccepted: {
+            var r = presenter.songs.importFiles(selectedFiles)
+            var parts = []
+            if (r.added > 0) parts.push(r.added + (r.added === 1 ? " lied toegevoegd" : " liederen toegevoegd"))
+            if (r.existing > 0) parts.push(r.existing + (r.existing === 1 ? " stond er al in" : " stonden er al in"))
+            if (r.failed > 0) parts.push(r.failed + (r.failed === 1 ? " bestand kon niet worden gelezen" : " bestanden konden niet worden gelezen"))
+            importResult.text = parts.join(";  ")
+            importResult.detail = r.failed > 0 ? "Gebruik het tekstbestand (.txt) of het USR-bestand (.usr) van SongSelect." : (r.titles.length > 0 ? r.titles.join("\n") : "")
+            importResult.open()
+        }
+    }
+    Dialog {
+        id: importResult
+        property string text: ""
+        property string detail: ""
+        modal: true
+        property bool reparented: false
+        onAboutToShow: if (!reparented && parent && parent.Window.window) { reparented = true; parent = parent.Window.window.contentItem }
+        x: parent ? Math.round((parent.width - width) / 2) : 0
+        y: parent ? Math.round((parent.height - height) / 2) : 0
+        width: 460; padding: 20
+        background: Rectangle { color: T.panel; radius: 12; border.color: T.border }
+        contentItem: ColumnLayout {
+            spacing: 12
+            Text { text: "Liederen importeren"; color: T.text; font.pixelSize: 20; font.bold: true }
+            Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.text; font.pixelSize: 14; text: importResult.text }
+            Text { visible: importResult.detail !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 13; text: importResult.detail }
+            AppButton { Layout.alignment: Qt.AlignRight; text: "OK"; primary: true; onClicked: importResult.close() }
+        }
+    }
     TextEditorDialog {
         id: songEditor
         subtitleLabel: "Liednummer (optioneel)"
+        bodyLabel: "Tekst: een lege regel = nieuwe slide. Een regel als [Couplet 1] boven een deel is de naam van dat deel (komt niet op het scherm)"
         onConfirmed: function (t, s, b) {
             if (root.songEdit >= 0) presenter.songs.update(root.songEdit, t, s, b)
             else presenter.songs.add(t, s, b)

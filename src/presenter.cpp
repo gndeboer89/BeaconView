@@ -151,6 +151,13 @@ QStringList Presenter::currentRefs() const {
     return refs;
 }
 
+QStringList Presenter::currentLabels() const {
+    const ServiceItem *it = m_service.item(m_item);
+    QStringList out;
+    for (int i = 0, n = currentSlides().size(); i < n; ++i) out << (it && i < it->labels.size() ? it->labels[i] : QString());
+    return out;
+}
+
 QString Presenter::currentTitle() const {
     const ServiceItem *it = m_service.item(m_item);
     if (!it) return {};
@@ -313,6 +320,7 @@ void Presenter::editItemSlides(int i, const QString &title, const QString &subti
     it.subtitle = subtitle;
     if (!(keepRefs && slides.size() == it.refs.size())) it.refs.clear();
     it.slides = slides;
+    it.labels.clear();                   // the screen editor is not used for songs; slide names would no longer match
     it.images = images;
     while (it.images.size() > it.slides.size()) it.slides << QString();   // keep both lists the same length
     while (it.slides.size() > it.images.size() && !it.images.isEmpty()) it.images << QString();
@@ -357,8 +365,9 @@ void Presenter::addSong(int songIndex) {
     if (!idx.isValid()) return;
     const QString number = m_songs.data(idx, SongLibrary::NumberRole).toString();
     const QString title = m_songs.data(idx, SongLibrary::TitleRole).toString();
-    m_service.append({"song", number.isEmpty() ? QStringLiteral("Lied") : QStringLiteral("Lied %1").arg(number), title, {},
-                      ServiceModel::splitSlides(m_songs.data(idx, SongLibrary::LyricsRole).toString())});
+    ServiceItem it{"song", number.isEmpty() ? QStringLiteral("Lied") : QStringLiteral("Lied %1").arg(number), title, {}, {}};
+    it.slides = ServiceModel::splitLabeled(m_songs.data(idx, SongLibrary::LyricsRole).toString(), &it.labels);
+    m_service.append(it);
 }
 
 int Presenter::addPassage(const QString &reference, int versesPerSlide, bool verseNumbers, bool show) {
@@ -379,18 +388,27 @@ void Presenter::editItem(int i, const QString &title, const QString &subtitle, c
     ServiceItem it = *old;
     it.title = title;
     it.subtitle = subtitle;
-    it.slides = ServiceModel::splitSlides(text);
+    it.slides = ServiceModel::splitLabeled(text, &it.labels);
     if (it.slides.size() != it.refs.size()) it.refs.clear();  // references only stay valid while slide count is unchanged
     m_service.replace(i, it);
 }
 
 QString Presenter::itemText(int i) const {
     const ServiceItem *it = m_service.item(i);
-    return it ? it->slides.join("\n\n") : QString();
+    return it ? ServiceModel::joinLabeled(it->slides, it->labels) : QString();
 }
 
 void Presenter::removeItem(int i) { m_service.remove(i); }
-void Presenter::moveItem(int i, int delta) { m_service.move(i, i + delta); }
+void Presenter::moveItem(int i, int delta) { moveItemTo(i, i + delta); }
+
+void Presenter::moveItemTo(int from, int to) {
+    if (!m_service.item(from) || !m_service.item(to) || from == to) return;
+    // the part that is live stays live, wherever it ends up in the list
+    if (m_item == from) m_item = to;
+    else if (from < m_item && m_item <= to) --m_item;
+    else if (to <= m_item && m_item < from) ++m_item;
+    m_service.move(from, to);
+}
 void Presenter::setItemBackground(int i, const QString &bg) { m_service.setBackground(i, bg); }
 void Presenter::setItemTemplate(int i, const QString &templateId) { m_service.setTemplate(i, templateId); }
 QString Presenter::defaultTemplateName(int i) const {

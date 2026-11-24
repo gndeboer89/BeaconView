@@ -3,7 +3,7 @@
 Native kerkpresentatiesoftware voor beamer, tv en LED-schermen.
 Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
-## Wat werkt nu (v0.1.0.1)
+## Wat werkt nu (v0.1.1.0)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
 - **Media-bibliotheek** (tab Media): alle achtergronden, afbeeldingen en video's in één overzicht met miniaturen (bij video's het eerste beeld), filteren, meerdere bestanden tegelijk importeren, voorbeeld en gegevens, gebruiken als achtergrond van het huidige onderdeel of als standaardachtergrond, een video als video-onderdeel toevoegen, en **verwijderen** (alleen je eigen kopie in de app; verwijzingen worden opgeruimd)
 - **Presentaties**: PDF, PowerPoint (`.pptx`, `.ppt`, `.odp`) en afbeeldingen importeren als slides; elke dia wordt een beeld op het scherm. PDF wordt rechtstreeks gelezen; PowerPoint wordt omgezet met LibreOffice (gratis) of, op Windows en macOS, met PowerPoint zelf. Lukt dat niet, dan staat er hoe je het als PDF exporteert.
@@ -13,6 +13,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - **Lege slide / alleen achtergrond**: een slide zonder tekst toont alleen de achtergrond; tijdens de dienst haalt **Geen tekst** (of **T**) de tekst van het scherm en laat de achtergrond staan, bij de volgende slide is de tekst er weer
 - **Schermeditor (WYSIWYG)** voor alle onderdelen behalve liederen: typ direct op het scherm met het gekozen template en de echte achtergrond, voeg slides toe/verplaats/verwijder ze, kies template en achtergrond en zie rechts het exacte resultaat
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst
+- **Liederen importeren uit SongSelect (CCLI)**: de tekstbestanden (.txt) en USR-bestanden (.usr) die je zelf met je account downloadt; elk deel wordt een slide en houdt zijn naam (Verse 1, Chorus, …): die staat in de lied-editor als `[Verse 1]` boven het deel en in de slidelijst, maar nooit op het scherm; titel, auteurs en CCLI-nummer worden bewaard en dubbele liederen worden overgeslagen. Er is geen directe koppeling met SongSelect (die is niet beschikbaar voor nieuwe programma's)
 - Live-uitvoer op een tweede scherm (randloos, volledig scherm); bij één scherm een los venster
 - Alle slides van het huidige onderdeel als aanklikbare lijst (klik = die slide live; de lijst scrolt mee), zwart scherm, logo, achtergrondkeuze (kleurverlopen, eigen afbeeldingen of **video's**: mp4/mov/webm/mkv, stil en in een lus)
 - Sneltoetsen: → / spatie / PgDn = volgende, ← / PgUp = vorige, **B** = zwart, **L** = logo
@@ -56,4 +57,4 @@ Zie `data/README.md` (bron en licentie) en `tools/make_bible.py` (conversie).
 
 ## Nog te doen
 Meer bijbelvertalingen (licentie nodig voor NBV21/HSV/BGT), videominiaturen, timer die automatisch de dienst start, 
-importeren van liederen (OpenSong/CCLI), afstandsbediening.
+importeren van liederen uit andere formaten (OpenSong, PDF), CCLI-nummer in de uitvoer tonen, afstandsbediening.

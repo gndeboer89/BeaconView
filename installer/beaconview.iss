@@ -1,5 +1,5 @@
 ; Inno Setup script for the Windows installer.
-; Built in CI: ISCC.exe /DMyAppVersion=0.1.0.1 installer\beaconview.iss
+; Built in CI: ISCC.exe /DMyAppVersion=0.1.1.0 installer\beaconview.iss
 ; Expects the deployed app (beaconview.exe + Qt DLLs/plugins/qml) in ..\dist
 
 #ifndef MyAppVersion

@@ -67,7 +67,8 @@ QJsonArray ServiceModel::toJson() const {
                                {"background", it.background}, {"slides", QJsonArray::fromStringList(it.slides)},
                                {"refs", QJsonArray::fromStringList(it.refs)}, {"template", it.templateId},
                                {"images", QJsonArray::fromStringList(it.images)}, {"loopSeconds", it.loopSeconds},
-                               {"video", it.video}, {"videoLoop", it.videoLoop}, {"videoNext", it.videoNext}});
+                               {"video", it.video}, {"videoLoop", it.videoLoop}, {"videoNext", it.videoNext},
+                               {"labels", QJsonArray::fromStringList(it.labels)}});
     }
     return arr;
 }
@@ -82,6 +83,7 @@ void ServiceModel::fromJson(const QJsonArray &arr) {
         for (const auto &s : o["slides"].toArray()) it.slides << s.toString();
         for (const auto &s : o["refs"].toArray()) it.refs << s.toString();
         for (const auto &s : o["images"].toArray()) it.images << s.toString();
+        for (const auto &s : o["labels"].toArray()) it.labels << s.toString();
         it.loopSeconds = o["loopSeconds"].toInt();
         it.video = o["video"].toString();
         it.videoLoop = o["videoLoop"].toBool();
@@ -96,4 +98,31 @@ QStringList ServiceModel::splitSlides(const QString &text) {
     const auto blocks = text.trimmed().split(QRegularExpression("\\n\\s*\\n"), Qt::SkipEmptyParts);
     for (const QString &b : blocks) out << b.trimmed();
     return out;
+}
+
+QStringList ServiceModel::splitLabeled(const QString &text, QStringList *labels) {
+    static const QRegularExpression label(R"(^\[([^\]\n]{1,40})\][ \t]*(?:\n|$))");
+    QStringList out;
+    if (labels) labels->clear();
+    const auto blocks = text.trimmed().split(QRegularExpression("\\n\\s*\\n"), Qt::SkipEmptyParts);
+    for (const QString &raw : blocks) {
+        QString b = raw.trimmed(), name;
+        if (const auto m = label.match(b); m.hasMatch()) {
+            name = m.captured(1).trimmed();
+            b = b.mid(m.capturedLength()).trimmed();
+            if (b.isEmpty()) continue;       // a name without text is not a slide
+        }
+        out << b;
+        if (labels) *labels << name;
+    }
+    return out;
+}
+
+QString ServiceModel::joinLabeled(const QStringList &slides, const QStringList &labels) {
+    QStringList blocks;
+    for (int i = 0; i < slides.size(); ++i) {
+        const QString name = i < labels.size() ? labels[i].trimmed() : QString();
+        blocks << (name.isEmpty() ? slides[i] : "[" + name + "]\n" + slides[i]);
+    }
+    return blocks.join("\n\n");
 }
