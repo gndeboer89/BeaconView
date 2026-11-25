@@ -20,6 +20,7 @@ qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/singleinstance.cpp src/singleinstance.h
     src/songfilter.cpp src/songfilter.h
     src/usagelog.cpp src/usagelog.h
+    src/updatechecker.cpp src/updatechecker.h
     src/presenter.cpp    src/presenter.h
     src/bible.cpp        src/bible.h
     src/templatelibrary.cpp src/templatelibrary.h
@@ -144,6 +145,10 @@ if(BUILD_TESTING)
     target_include_directories(tst_usagelog PRIVATE src)
     target_link_libraries(tst_usagelog PRIVATE Qt6::Test Qt6::Core)
     add_test(NAME usagelog COMMAND tst_usagelog)
+    qt_add_executable(tst_updatechecker tests/tst_updatechecker.cpp src/updatechecker.cpp src/updatechecker.h)
+    target_include_directories(tst_updatechecker PRIVATE src)
+    target_link_libraries(tst_updatechecker PRIVATE Qt6::Test Qt6::Network Qt6::Gui)
+    add_test(NAME updatechecker COMMAND tst_updatechecker)
     qt_add_executable(tst_importer tests/tst_importer.cpp src/slideimporter.cpp src/slideimporter.h)
     target_include_directories(tst_importer PRIVATE src)
     target_compile_definitions(tst_importer PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")

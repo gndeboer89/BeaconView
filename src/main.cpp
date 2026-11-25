@@ -1,4 +1,5 @@
 #include <QElapsedTimer>
+#include <QFile>
 #include <QEventLoop>
 #include <QGuiApplication>
 #include <QIcon>
@@ -12,6 +13,7 @@
 #include <QRegularExpression>
 #include "presenter.h"
 #include "singleinstance.h"
+#include "updatechecker.h"
 #include "videohub.h"
 #include "videothumbnails.h"
 
@@ -58,10 +60,12 @@ int main(int argc, char *argv[]) {
     setStatus("Scherm opbouwen…");
     VideoHub videoHub;      // must outlive the QML engine: components still use it while they are torn down
     VideoThumbnails videoThumbs;
+    UpdateChecker updates;   // before the engine, like the objects above
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("presenter", &presenter);
     engine.rootContext()->setContextProperty("videoHub", &videoHub);
     engine.rootContext()->setContextProperty("videoThumbs", &videoThumbs);
+    engine.rootContext()->setContextProperty("updates", &updates);
     const QStringList cli = app.arguments();
     auto cliValue = [&cli](const QString &key) { int i = cli.indexOf(key); return (i >= 0 && i + 1 < cli.size()) ? cli[i + 1] : QString(); };
     engine.rootContext()->setContextProperty("devTab", cliValue("--tab").isEmpty() ? -1 : cliValue("--tab").toInt());
@@ -73,6 +77,8 @@ int main(int argc, char *argv[]) {
     engine.load(QUrl("qrc:/qml/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     presenter.log(QStringLiteral("Opstarten: scherm opgebouwd na %1 ms").arg(startup.elapsed()));
+    // A while after the start: is there a newer version? (at most twice a day, never while something is on the output)
+    if (!devRun) QTimer::singleShot(8000, &updates, [&updates, &presenter] { updates.checkIfDue(presenter.outputOn()); });
     if (auto *mainWin = qobject_cast<QQuickWindow *>(engine.rootObjects().first())) {
         // A second start of the program brings this window to the front.
         QObject::connect(&single, &SingleInstance::activated, mainWin, [mainWin] {
@@ -135,6 +141,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i + 1 < cli.size(); ++i) if (cli[i] == "--add-extra") presenter.extraScreens()->add(cli[i + 1]);
     // Developer aid: `--open-extra` opens every extra screen; with `--screenshot` each one is saved as <file>-extra<N>.png.
     if (args.contains("--open-extra")) for (int i = 0; i < presenter.extraScreens()->rowCount(); ++i) presenter.extraScreens()->set(i, "on", true);
+    // Developer aid: `--update-url <file or address>` takes the list of releases from there; `--check-updates` checks at once.
+    if (const QString u = cliValue("--update-url"); !u.isEmpty()) updates.setApiUrl(QFile::exists(u) ? QUrl::fromLocalFile(u) : QUrl(u));
+    if (args.contains("--check-updates")) updates.check(true);
     // Developer aid: `--demo` starts the service and steps through two slides.
     if (args.contains("--demo")) {
         presenter.startService();
