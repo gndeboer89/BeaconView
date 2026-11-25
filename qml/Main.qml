@@ -70,6 +70,20 @@ ApplicationWindow {
             }
         }
 
+        // ---- a newer version exists (only a message: nothing is downloaded by the program) ----
+        Rectangle {
+            visible: updates.bannerVisible
+            Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 10; color: T.accentSoft; border.color: T.accent
+            RowLayout {
+                anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 8; spacing: 10
+                Text { Layout.fillWidth: true; color: T.text; font.pixelSize: 14; elide: Text.ElideRight
+                    text: "Versie " + updates.latestVersion + " is beschikbaar (je gebruikt " + updates.currentVersion + ")." }
+                AppButton { text: "Downloaden"; primary: true; implicitHeight: 30; onClicked: updates.openDownload() }
+                AppButton { text: "Deze versie overslaan"; implicitHeight: 30; onClicked: updates.skipVersion() }
+                AppButton { text: "✕"; flat: true; implicitWidth: 30; implicitHeight: 30; onClicked: updates.closeBanner() }
+            }
+        }
+
         // ---- pages ---------------------------------------------------------------
         StackLayout {
             Layout.fillWidth: true; Layout.fillHeight: true

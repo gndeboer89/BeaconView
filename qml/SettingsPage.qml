@@ -107,6 +107,22 @@ Item {
                         onMoved: { root.previewMode = 1; root.b.watermarkSize = value } }
 
                     Rectangle { Layout.fillWidth: true; height: 1; color: T.border }
+                    Text { text: "Updates"; color: T.text; font.pixelSize: 14; font.bold: true }
+                    Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 12
+                        text: "Je gebruikt versie " + updates.currentVersion + ". De app kijkt op GitHub of er een nieuwere versie is en meldt dat bovenin; "
+                            + "er wordt niets zelf gedownload of geïnstalleerd, en er wordt niet gekeken zolang de uitvoer open staat." }
+                    CheckBox {
+                        text: "Automatisch op updates controleren"; checked: updates.autoCheck; onToggled: updates.autoCheck = checked
+                        contentItem: Text { text: parent.text; color: T.text; font.pixelSize: 13; leftPadding: parent.indicator.width + 6; verticalAlignment: Text.AlignVCenter }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true; spacing: 8
+                        AppButton { text: updates.checking ? "Bezig…" : "Nu controleren"; implicitHeight: 34; enabled: !updates.checking; onClicked: updates.check(true) }
+                        AppButton { visible: updates.available; text: "Downloaden"; primary: true; implicitHeight: 34; onClicked: updates.openDownload() }
+                    }
+                    Text { visible: updates.message !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 12; text: updates.message }
+
+                    Rectangle { Layout.fillWidth: true; height: 1; color: T.border }
                     Text { text: "Problemen oplossen"; color: T.text; font.pixelSize: 14; font.bold: true }
                     Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 12
                         text: "Start een video niet goed? In het logbestand staat wat er gebeurde. Stuur dat mee als je een probleem meldt." }
