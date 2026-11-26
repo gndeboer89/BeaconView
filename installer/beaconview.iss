@@ -1,6 +1,6 @@
 ; Inno Setup script for the Windows installer.
 ; Built in CI: ISCC.exe /DMyAppVersion=0.1.5.1 installer\beaconview.iss
-; Expects the deployed app (beaconview.exe + Qt DLLs/plugins/qml) in ..\dist
+; Expects the deployed app (beaconview.exe, beaconview-songs.exe + Qt DLLs/plugins/qml) in ..\dist
 
 #ifndef MyAppVersion
   #define MyAppVersion "0.0.0"
@@ -44,7 +44,9 @@ Source: "..\dist\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ig
 
 [Icons]
 Name: "{group}\BeaconView"; Filename: "{app}\beaconview.exe"
+Name: "{group}\BeaconView Liederen"; Filename: "{app}\beaconview-songs.exe"
 Name: "{autodesktop}\BeaconView"; Filename: "{app}\beaconview.exe"; Tasks: desktopicon
+Name: "{autodesktop}\BeaconView Liederen"; Filename: "{app}\beaconview-songs.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\beaconview.exe"; Description: "{cm:LaunchProgram,BeaconView}"; Flags: nowait postinstall skipifsilent

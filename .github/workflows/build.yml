@@ -40,7 +40,9 @@ jobs:
         run: |
           New-Item -ItemType Directory dist | Out-Null
           Copy-Item build/Release/beaconview.exe dist/
+          Copy-Item build/Release/beaconview-songs.exe dist/
           windeployqt --qmldir qml dist/beaconview.exe
+          windeployqt --qmldir qml dist/beaconview-songs.exe
           Compress-Archive dist/* BeaconView-Windows.zip
       - name: Installer (Windows)
         if: runner.os == 'Windows'
@@ -55,9 +57,14 @@ jobs:
       - name: Package (macOS)
         if: runner.os == 'macOS'
         run: |
-          macdeployqt build/beaconview.app -qmldir=qml -dmg
-          ls -la build/*.dmg
-          mv build/beaconview.dmg BeaconView-macOS.dmg
+          # two programs in one disk image: BeaconView and BeaconView Liederen (side by side, so the first can start the second)
+          macdeployqt build/beaconview.app -qmldir=qml
+          macdeployqt "build/BeaconView Liederen.app" -qmldir=qml
+          mkdir dmgroot
+          cp -R build/beaconview.app dmgroot/
+          cp -R "build/BeaconView Liederen.app" dmgroot/
+          hdiutil create -volname BeaconView -srcfolder dmgroot -ov -format UDZO BeaconView-macOS.dmg
+          ls -la BeaconView-macOS.dmg
       - uses: actions/upload-artifact@v4
         if: runner.os != 'Linux'
         with:

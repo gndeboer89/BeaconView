@@ -176,3 +176,11 @@ void ServiceModel::expandOrder(const QString &source, const QStringList &order, 
     }
     if (slides->isEmpty()) { *slides = parts; *labels = names; }   // no order, or nothing in it matched
 }
+
+QVariantList ServiceModel::preview(const QString &lyrics, const QString &order) {
+    QStringList slides, labels;
+    expandOrder(lyrics, parseOrder(order), &slides, &labels);
+    QVariantList out;
+    for (int i = 0; i < slides.size(); ++i) out << QVariantMap{{"label", labels.value(i)}, {"text", slides[i]}};
+    return out;
+}

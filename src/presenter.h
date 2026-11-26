@@ -23,6 +23,7 @@ class Presenter : public QObject {
     Q_PROPERTY(SongLibrary *songs READ songs CONSTANT)
     Q_PROPERTY(SongFilter *songFilter READ songFilter CONSTANT)   // the song list: sorted and searchable
     Q_PROPERTY(ExtraScreens *extraScreens READ extraScreens CONSTANT)
+    Q_PROPERTY(bool hasService READ hasService CONSTANT)           // the song page also runs in the song program, which has no service
     Q_PROPERTY(UsageLog *usage READ usage CONSTANT)                // which songs were shown (report)
     Q_PROPERTY(Bible *bible READ bible CONSTANT)
     Q_PROPERTY(TemplateLibrary *templates READ templates CONSTANT)
@@ -78,6 +79,9 @@ public:
     SongFilter *songFilter() { return &m_songFilter; }
     ExtraScreens *extraScreens() { return &m_extraScreens; }
     UsageLog *usage() { return &m_usage; }
+    bool hasService() const { return true; }
+    // Starts the song program (a separate program that works on the same songs). False when it is not there.
+    Q_INVOKABLE bool openSongStudio();
     Bible *bible() { return &m_bible; }
     TemplateLibrary *templates() { return &m_templates; }
     OverlayController *overlays() { return &m_overlays; }

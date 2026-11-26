@@ -8,17 +8,25 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Network Quick QuickControls2 Multimedia Svg Pdf)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Network Sql Quick QuickControls2 Multimedia Svg Pdf)
 qt_standard_project_setup()
+
+# The song code (database, list, import, search, part order): shared by the main program, the song program and the tests.
+qt_add_library(beaconview_songs STATIC
+    src/songdatabase.cpp src/songdatabase.h
+    src/songlibrary.cpp  src/songlibrary.h
+    src/songimporter.cpp src/songimporter.h
+    src/songfilter.cpp   src/songfilter.h
+    src/servicemodel.cpp src/servicemodel.h
+    src/singleinstance.cpp src/singleinstance.h
+)
+set_target_properties(beaconview_songs PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(beaconview_songs PUBLIC src)
+target_link_libraries(beaconview_songs PUBLIC Qt6::Core Qt6::Sql Qt6::Network)
 
 qt_add_executable(beaconview WIN32 MACOSX_BUNDLE
     src/main.cpp
-    src/servicemodel.cpp src/servicemodel.h
-    src/songlibrary.cpp  src/songlibrary.h
-    src/songimporter.cpp src/songimporter.h
     src/extrascreens.cpp src/extrascreens.h
-    src/singleinstance.cpp src/singleinstance.h
-    src/songfilter.cpp src/songfilter.h
     src/usagelog.cpp src/usagelog.h
     src/updatechecker.cpp src/updatechecker.h
     src/presenter.cpp    src/presenter.h
@@ -85,10 +93,38 @@ set_target_properties(beaconview PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
 )
 target_compile_definitions(beaconview PRIVATE APP_VERSION="${PROJECT_VERSION}")
-target_link_libraries(beaconview PRIVATE Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg Qt6::Pdf)
+target_link_libraries(beaconview PRIVATE beaconview_songs Qt6::Network Qt6::Quick Qt6::QuickControls2 Qt6::Multimedia Qt6::Svg Qt6::Pdf)
+
+# BeaconView Liederen: the song editor as a program of its own (same song database as BeaconView).
+qt_add_executable(beaconview-songs WIN32 MACOSX_BUNDLE
+    src/songstudio_main.cpp src/songstudio.h
+)
+qt_add_resources(beaconview-songs "songs_assets" PREFIX "/" FILES assets/icon/icon.png)
+qt_add_resources(beaconview-songs "songs_qml" PREFIX "/" FILES
+    qml/SongStudio.qml
+    qml/SongsPage.qml
+    qml/SongImport.qml
+    qml/AppButton.qml
+    qml/Theme.js
+)
+target_compile_definitions(beaconview-songs PRIVATE APP_VERSION="${PROJECT_VERSION}")
+target_link_libraries(beaconview-songs PRIVATE beaconview_songs Qt6::Quick Qt6::QuickControls2)
+if(WIN32)
+    target_sources(beaconview-songs PRIVATE assets/beaconview.rc)
+endif()
+if(APPLE)
+    target_sources(beaconview-songs PRIVATE ${BV_ICNS})
+    set_target_properties(beaconview-songs PROPERTIES
+        OUTPUT_NAME "BeaconView Liederen"
+        MACOSX_BUNDLE_ICON_FILE beaconview.icns
+        MACOSX_BUNDLE_GUI_IDENTIFIER nl.beaconview.songs
+        MACOSX_BUNDLE_BUNDLE_NAME "BeaconView Liederen"
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION})
+endif()
 
 include(GNUInstallDirs)
-install(TARGETS beaconview BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS beaconview beaconview-songs BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Unit tests: cmake -DBUILD_TESTING=ON ... && ctest --test-dir build --output-on-failure
 option(BUILD_TESTING "Build unit tests" OFF)
@@ -112,38 +148,35 @@ if(BUILD_TESTING)
     target_include_directories(tst_branding PRIVATE src)
     target_link_libraries(tst_branding PRIVATE Qt6::Test Qt6::Gui)
     add_test(NAME branding COMMAND tst_branding)
-    qt_add_executable(tst_service tests/tst_service.cpp src/servicemodel.cpp src/servicemodel.h)
-    target_include_directories(tst_service PRIVATE src)
-    target_link_libraries(tst_service PRIVATE Qt6::Test)
+    qt_add_executable(tst_service tests/tst_service.cpp)
+    target_link_libraries(tst_service PRIVATE Qt6::Test beaconview_songs)
     add_test(NAME service COMMAND tst_service)
     qt_add_executable(tst_presenter tests/tst_presenter.cpp
-        src/presenter.cpp src/servicemodel.cpp src/songlibrary.cpp src/songimporter.cpp src/songfilter.cpp src/usagelog.cpp src/extrascreens.cpp src/bible.cpp
+        src/presenter.cpp src/usagelog.cpp src/extrascreens.cpp src/bible.cpp
         src/templatelibrary.cpp src/overlaycontroller.cpp src/branding.cpp src/slideimporter.cpp)
     qt_add_resources(tst_presenter "bible_data" PREFIX "/" FILES data/bible_svv.json)
     target_include_directories(tst_presenter PRIVATE src)
-    target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui Qt6::Pdf)
+    target_link_libraries(tst_presenter PRIVATE Qt6::Test Qt6::Gui Qt6::Pdf beaconview_songs)
     add_test(NAME presenter COMMAND tst_presenter)
-    qt_add_executable(tst_songimport tests/tst_songimport.cpp src/songlibrary.cpp src/songlibrary.h src/songimporter.cpp src/songimporter.h)
-    target_include_directories(tst_songimport PRIVATE src)
-    target_link_libraries(tst_songimport PRIVATE Qt6::Test Qt6::Core)
+    qt_add_executable(tst_songimport tests/tst_songimport.cpp)
+    target_link_libraries(tst_songimport PRIVATE Qt6::Test beaconview_songs)
     add_test(NAME songimport COMMAND tst_songimport)
     qt_add_executable(tst_extrascreens tests/tst_extrascreens.cpp src/extrascreens.cpp src/extrascreens.h)
     target_include_directories(tst_extrascreens PRIVATE src)
     target_link_libraries(tst_extrascreens PRIVATE Qt6::Test Qt6::Core)
     add_test(NAME extrascreens COMMAND tst_extrascreens)
-    qt_add_executable(tst_singleinstance tests/tst_singleinstance.cpp src/singleinstance.cpp src/singleinstance.h)
-    target_include_directories(tst_singleinstance PRIVATE src)
-    target_link_libraries(tst_singleinstance PRIVATE Qt6::Test Qt6::Network)
+    qt_add_executable(tst_singleinstance tests/tst_singleinstance.cpp)
+    target_link_libraries(tst_singleinstance PRIVATE Qt6::Test beaconview_songs)
     add_test(NAME singleinstance COMMAND tst_singleinstance)
-    qt_add_executable(tst_songfilter tests/tst_songfilter.cpp src/songfilter.cpp src/songfilter.h src/songlibrary.cpp src/songlibrary.h
-        src/songimporter.cpp src/songimporter.h)
-    target_include_directories(tst_songfilter PRIVATE src)
-    target_link_libraries(tst_songfilter PRIVATE Qt6::Test Qt6::Core)
+    qt_add_executable(tst_songfilter tests/tst_songfilter.cpp)
+    target_link_libraries(tst_songfilter PRIVATE Qt6::Test beaconview_songs)
+    qt_add_executable(tst_songdatabase tests/tst_songdatabase.cpp)
+    target_link_libraries(tst_songdatabase PRIVATE Qt6::Test beaconview_songs)
+    add_test(NAME songdatabase COMMAND tst_songdatabase)
     add_test(NAME songfilter COMMAND tst_songfilter)
-    qt_add_executable(tst_usagelog tests/tst_usagelog.cpp src/usagelog.cpp src/usagelog.h src/songfilter.cpp src/songfilter.h
-        src/songlibrary.cpp src/songlibrary.h src/songimporter.cpp src/songimporter.h)
+    qt_add_executable(tst_usagelog tests/tst_usagelog.cpp src/usagelog.cpp src/usagelog.h)
     target_include_directories(tst_usagelog PRIVATE src)
-    target_link_libraries(tst_usagelog PRIVATE Qt6::Test Qt6::Core)
+    target_link_libraries(tst_usagelog PRIVATE Qt6::Test beaconview_songs)
     add_test(NAME usagelog COMMAND tst_usagelog)
     qt_add_executable(tst_updatechecker tests/tst_updatechecker.cpp src/updatechecker.cpp src/updatechecker.h)
     target_include_directories(tst_updatechecker PRIVATE src)

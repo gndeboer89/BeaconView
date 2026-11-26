@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
         QTimer::singleShot(qEnvironmentVariableIntValue("BEACONVIEW_SHOT_DELAY") > 0 ? qEnvironmentVariableIntValue("BEACONVIEW_SHOT_DELAY") : 1500, &app, [&engine, &app, path] {
             auto *w = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
             if (w) w->grabWindow().save(path);
+            if (w) w->setProperty("quitConfirmed", true);       // the close question is for people, not for this developer aid
             int n = 0;
             for (auto *extra : w ? w->findChildren<QQuickWindow *>() : QList<QQuickWindow *>())
                 if (extra->isVisible() && extra->title().startsWith(QStringLiteral("BeaconView \u2013 "))) {

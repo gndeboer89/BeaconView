@@ -126,6 +126,11 @@ private slots:
         p.editItemSlides(0, "Lied", "", {"x"}, {}, 0, false);                 // the screen editor does not know names
         QCOMPARE(p.currentLabels(), (QStringList{""}));
     }
+    void songProgramIsOptional() {
+        Presenter p;
+        QVERIFY(p.hasService());              // the main program has a service (the song program does not)
+        // (openSongStudio starts the real song program that sits next to the program, so it is not called here)
+    }
     void songListIsSortedAndSearchable() {
         Presenter p;
         p.songs()->add("Zondagslied", "", "tekst");

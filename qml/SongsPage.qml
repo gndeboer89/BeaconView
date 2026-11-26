@@ -8,6 +8,8 @@ import "Theme.js" as T
 Item {
     id: root
     property int row: -2                  // -2 nothing chosen, -1 a new song, 0.. a row of the library
+    property double songId: 0             // the id of the open song in the database (the row can move when the other program changes songs)
+    property string notice: ""            // a message about what the other program did
     property var orig: ({})               // what was loaded; the page is "changed" when the fields differ from it
     property int pendingRow: -3           // the row to open after the question about unsaved changes
 
@@ -26,7 +28,11 @@ Item {
     }
     function load(r) {
         var m = r >= 0 ? presenter.songs.get(r) : { title: "", number: "", lyrics: "", order: "", category: "", tags: [], author: "", ccli: "" }
-        orig = { title: m.title, number: m.number, lyrics: m.lyrics, order: m.order, category: m.category, tags: m.tags, author: m.author, ccli: m.ccli }
+        orig = { title: m.title, number: m.number, lyrics: m.lyrics, order: m.order, category: m.category, tags: m.tags, author: m.author, ccli: m.ccli,
+                 rev: m.rev !== undefined ? m.rev : 0 }
+        songId = m.id !== undefined ? m.id : 0
+        notice = ""
+
         titleField.text = m.title; numberField.text = m.number; lyricsArea.text = m.lyrics; orderField.text = m.order
         categoryField.text = m.category; tagsField.text = m.tags.join(", "); authorField.text = m.author; ccliField.text = m.ccli
         row = r                                          // last: the fields and `orig` are ready when the page compares them
@@ -36,19 +42,39 @@ Item {
     function openSong(r) {
         if (changed && r !== row) { pendingRow = r; leaveDialog.open() } else load(r)
     }
-    function save() {
+    function save(force) {
         if (row === -2) return false                       // nothing is open
         var c = current
         if (c.title === "") return false
         if (row === -1) {
-            presenter.songs.add(c.title, c.number, c.lyrics, c.order, c.category, c.tags)
-            row = presenter.songs.rowCount() - 1
+            var id = presenter.songs.add(c.title, c.number, c.lyrics, c.order, c.category, c.tags)
+            if (id === 0) return false
+            row = presenter.songs.rowOfId(id)
         } else {
-            presenter.songs.update(row, c.title, c.number, c.lyrics, c.order, c.category, c.tags)
+            // the revision says which version this page started from: when the other program changed the song since, nothing is overwritten
+            if (!presenter.songs.update(row, c.title, c.number, c.lyrics, c.order, c.category, c.tags, force === true ? -1 : orig.rev)) {
+                if (presenter.songs.rowOfId(songId) >= 0) conflictDialog.open()
+                return false
+            }
         }
         presenter.songs.setCredits(row, c.author, c.ccli)
         load(row)
         return true
+    }
+    // The other program changed songs: find this song again, and tell what happened to it.
+    function onExternal() {
+        if (songId === 0) return                           // a new song, or nothing open
+        var r = presenter.songs.rowOfId(songId)
+        if (r < 0) {                                       // removed in the other program: what is on this page can still be saved as a new song
+            row = -1; songId = 0
+            notice = "Dit lied is in het andere programma verwijderd. Je kunt het opslaan als nieuw lied."
+            return
+        }
+        row = r
+        var m = presenter.songs.get(r)
+        if (m.rev === orig.rev) return                     // not this song
+        if (!changed) { load(r); notice = "Dit lied is bijgewerkt in het andere programma."; return }
+        notice = "Dit lied is ondertussen ook in het andere programma gewijzigd. Bij opslaan kun je kiezen welke versie blijft."
     }
     function insertPart(name) {   // adds "[Couplet 2]" at the end of the lyrics
         var n = name, t = lyricsArea.text
@@ -59,6 +85,7 @@ Item {
         lyricsArea.text = (t.trim() === "" ? "" : t.replace(/\s+$/, "") + "\n\n") + "[" + n + "]\n"
         lyricsArea.forceActiveFocus(); lyricsArea.cursorPosition = lyricsArea.length
     }
+    Connections { target: presenter.songs; function onExternallyChanged() { root.onExternal() } }
     readonly property var parts: presenter.partNames(lyricsArea.text)
     readonly property var preview: presenter.songPreview(lyricsArea.text, orderField.text)
 
@@ -73,9 +100,12 @@ Item {
                 anchors.fill: parent; anchors.margins: 12; spacing: 8
                 RowLayout {
                     Layout.fillWidth: true; spacing: 8
-                    Text { text: "Liederen"; color: T.text; font.pixelSize: 20; font.bold: true; Layout.fillWidth: true }
-                    AppButton { text: "Importeren…"; implicitHeight: 32; onClicked: songImport.open() }
-                    AppButton { text: "+ Nieuw lied"; primary: true; implicitHeight: 32; onClicked: root.openSong(-1) }
+                    Text { text: "Liederen"; color: T.text; font.pixelSize: 20; font.bold: true; Layout.fillWidth: true; elide: Text.ElideRight }
+                    AppButton { visible: presenter.hasService; text: "↗"; implicitHeight: 32; implicitWidth: 36; leftPadding: 0; rightPadding: 0
+                        ToolTip.visible: hovered; ToolTip.text: "Liedprogramma openen: een apart programma voor de liederen, dat naast BeaconView kan openstaan"
+                        onClicked: if (!presenter.openSongStudio()) root.notice = "Het liedprogramma is niet gevonden. Installeer BeaconView opnieuw." }
+                    AppButton { text: "Importeren…"; implicitHeight: 32; leftPadding: 10; rightPadding: 10; onClicked: songImport.open() }
+                    AppButton { text: "+ Nieuw"; primary: true; implicitHeight: 32; leftPadding: 10; rightPadding: 10; onClicked: root.openSong(-1) }
                 }
                 TextField {
                     id: search
@@ -159,6 +189,17 @@ Item {
                 visible: root.row !== -2
                 anchors.fill: parent; anchors.margins: 16; spacing: 10
 
+                Rectangle {   // the songs cannot be saved
+                    visible: presenter.songs.storageError !== ""
+                    Layout.fillWidth: true; implicitHeight: warn.implicitHeight + 16; radius: 8; color: "#3b1717"; border.color: "#b3261e"
+                    Text { id: warn; anchors.fill: parent; anchors.margins: 8; wrapMode: Text.WordWrap; color: "#ffb4ab"; font.pixelSize: 13
+                        text: "De liederen worden niet opgeslagen: " + presenter.songs.storageError }
+                }
+                Rectangle {   // what the other program did
+                    visible: root.notice !== ""
+                    Layout.fillWidth: true; implicitHeight: note.implicitHeight + 16; radius: 8; color: T.accentSoft; border.color: T.accent
+                    Text { id: note; anchors.fill: parent; anchors.margins: 8; wrapMode: Text.WordWrap; color: T.text; font.pixelSize: 13; text: root.notice }
+                }
                 RowLayout {
                     Layout.fillWidth: true; spacing: 8
                     Text { text: root.row === -1 ? "Nieuw lied" : "Lied bewerken"; color: T.text; font.pixelSize: 20; font.bold: true }
@@ -279,7 +320,7 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true; spacing: 8
-                    AppButton { text: "Aan dienst toevoegen"; implicitHeight: 34; enabled: root.row >= 0
+                    AppButton { text: "Aan dienst toevoegen"; implicitHeight: 34; visible: presenter.hasService; enabled: root.row >= 0
                         onClicked: { if (root.changed && !root.save()) return; presenter.addSong(root.row); addedNote.visible = true; addedTimer.restart() } }
                     Text { id: addedNote; visible: false; text: "✓ Toegevoegd aan de dienst"; color: T.ok; font.pixelSize: 12
                         Timer { id: addedTimer; interval: 2500; onTriggered: addedNote.visible = false } }
@@ -293,6 +334,28 @@ Item {
     SongImport { id: songImport }
 
     // ---- questions ----------------------------------------------------------------
+    Dialog {
+        id: conflictDialog
+        modal: true
+        property bool reparented: false
+        onAboutToShow: if (!reparented && parent && parent.Window.window) { reparented = true; parent = parent.Window.window.contentItem }
+        x: parent ? Math.round((parent.width - width) / 2) : 0
+        y: parent ? Math.round((parent.height - height) / 2) : 0
+        width: 500; padding: 20
+        background: Rectangle { color: T.panel; radius: 12; border.color: T.border }
+        contentItem: ColumnLayout {
+            spacing: 12
+            Text { text: "Dit lied is ondertussen gewijzigd"; color: T.text; font.pixelSize: 20; font.bold: true }
+            Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 14
+                text: "Het lied is na het openen ook in het andere programma opgeslagen. Welke versie wil je houden?" }
+            RowLayout {
+                Layout.alignment: Qt.AlignRight; spacing: 8
+                AppButton { text: "Annuleren"; onClicked: conflictDialog.close() }
+                AppButton { text: "Hun versie laden"; onClicked: { conflictDialog.close(); root.load(presenter.songs.rowOfId(root.songId)) } }
+                AppButton { text: "Mijn versie bewaren"; primary: true; onClicked: { conflictDialog.close(); root.save(true) } }
+            }
+        }
+    }
     Dialog {
         id: leaveDialog
         modal: true
