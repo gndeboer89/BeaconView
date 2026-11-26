@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(BeaconView VERSION 0.1.5.0 LANGUAGES CXX)
+project(BeaconView VERSION 0.1.5.1 LANGUAGES CXX)
 if(WIN32)
     enable_language(RC)   # for the application icon (assets/beaconview.rc)
 endif()
