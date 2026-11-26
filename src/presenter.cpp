@@ -8,6 +8,8 @@
 #include <QLocale>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QCoreApplication>
+#include <QProcess>
 #include <QSettings>
 #include <QStandardPaths>
 
@@ -422,13 +424,7 @@ void Presenter::editItem(int i, const QString &title, const QString &subtitle, c
     m_service.replace(i, it);
 }
 
-QVariantList Presenter::songPreview(const QString &lyrics, const QString &order) const {
-    QStringList slides, labels;
-    ServiceModel::expandOrder(lyrics, ServiceModel::parseOrder(order), &slides, &labels);
-    QVariantList out;
-    for (int i = 0; i < slides.size(); ++i) out << QVariantMap{{"label", labels.value(i)}, {"text", slides[i]}};
-    return out;
-}
+QVariantList Presenter::songPreview(const QString &lyrics, const QString &order) const { return ServiceModel::preview(lyrics, order); }
 
 QString Presenter::itemOrder(int i) const {
     const ServiceItem *it = m_service.item(i);
@@ -544,4 +540,22 @@ void Presenter::seedDefaultService() {
     m_service.append({"sermon", "Verkondiging", "", {}, {"Verkondiging"}});
     m_service.append({"offering", "Collecte", "", {}, {"Collecte"}});
     m_service.append({"blessing", "Zegen", "", {}, {"Zegen"}});
+}
+
+bool Presenter::openSongStudio() {
+    // The song program sits next to this program (in the install folder, or next to this app in the folder of the disk image).
+    const QString dir = QCoreApplication::applicationDirPath();
+#if defined(Q_OS_WIN)
+    const QString exe = dir + "/beaconview-songs.exe";
+    if (!QFile::exists(exe)) return false;
+    return QProcess::startDetached(exe, {});
+#elif defined(Q_OS_MACOS)
+    const QString app = QDir(dir + "/../../..").absoluteFilePath("BeaconView Liederen.app");
+    if (!QFile::exists(app)) return false;
+    return QProcess::startDetached("open", {app});
+#else
+    const QString exe = dir + "/beaconview-songs";
+    if (!QFile::exists(exe)) return false;
+    return QProcess::startDetached(exe, {});
+#endif
 }

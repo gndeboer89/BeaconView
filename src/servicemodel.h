@@ -2,6 +2,7 @@
 #include <QAbstractListModel>
 #include <QJsonArray>
 #include <QStringList>
+#include <QVariantList>
 
 struct ServiceItem {
     QString kind;        // welcome, song, prayer, scripture, sermon, offering, blessing, custom
@@ -68,6 +69,8 @@ public:
     static void expandOrder(const QString &source, const QStringList &order, QStringList *slides, QStringList *labels);
     // The names that can be used in an order for this text, in the order they are written ("Verse 1", ..., "#3" for a part without a name).
     static QStringList partNames(const QString &source);
+    // The slides that a song text gives in an order, as [{label, text}] (for the preview in the song editor).
+    static QVariantList preview(const QString &lyrics, const QString &order);
 
 private:
     QList<ServiceItem> m_items;

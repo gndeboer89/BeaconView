@@ -3,7 +3,7 @@
 Native kerkpresentatiesoftware voor beamer, tv en LED-schermen.
 Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 
-## Wat werkt nu (v0.1.5.1)
+## Wat werkt nu (v0.2.0.0)
 - Dienstorde met onderdelen (welkom, lied, gebed, schriftlezing, …): toevoegen, bewerken, verplaatsen, verwijderen
 - **Media-bibliotheek** (tab Media): alle achtergronden, afbeeldingen en video's in één overzicht met miniaturen (bij video's het eerste beeld), filteren, meerdere bestanden tegelijk importeren, voorbeeld en gegevens, gebruiken als achtergrond van het huidige onderdeel of als standaardachtergrond, een video als video-onderdeel toevoegen, en **verwijderen** (alleen je eigen kopie in de app; verwijzingen worden opgeruimd)
 - **Presentaties**: PDF, PowerPoint (`.pptx`, `.ppt`, `.odp`) en afbeeldingen importeren als slides; elke dia wordt een beeld op het scherm. PDF wordt rechtstreeks gelezen; PowerPoint wordt omgezet met LibreOffice (gratis) of, op Windows en macOS, met PowerPoint zelf. Lukt dat niet, dan staat er hoe je het als PDF exporteert.
@@ -14,6 +14,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - **Schermeditor (WYSIWYG)** voor alle onderdelen behalve liederen: typ direct op het scherm met het gekozen template en de echte achtergrond, voeg slides toe/verplaats/verwijder ze, kies template en achtergrond en zie rechts het exacte resultaat
 - **Extra schermen** (pagina Schermen): een stage-scherm voor wie op het podium staat (huidige en volgende tekst met de naam van het deel, klok, timer, zwart-scherm-melding) en een ondertitelscherm met chroma-key (alleen de tekst met rand op groen, blauw, magenta of zwart; positie, grootte en tekstkleur instelbaar). Per scherm kies je een beeldscherm of een los venster (de venstertitel is de naam, voor een venster-opname in OBS of vMix); schermen kunnen met de uitvoer meeopenen
 - Liederenbibliotheek (lege regel in de tekst = nieuwe slide), liederen toevoegen aan de dienst; alfabetisch, met een zoekveld (titel, regel uit de tekst, auteur, CCLI-nummer; hoofdletters en accenten maken niet uit)
+- **Liederen in een database, met een eigen programma**: de liederen staan in één SQLite-database (`songs.db` in de gegevensmap, met elke dag een kopie in `backups/`, de laatste 14 blijven staan). **BeaconView Liederen** is een apart programma om liederen te beheren (dezelfde liederenpagina in een eigen venster); het kan tegelijk met BeaconView openstaan en beide volgen elkaars wijzigingen binnen ongeveer anderhalve seconde. Wijzig je een lied terwijl het andere programma datzelfde lied wijzigt, dan wordt niets stilzwijgend overschreven: je kiest welke versie blijft. De knop 'Eigen venster' op de liederenpagina start het liedprogramma. De oude `songs.json` wordt bij de eerste start overgenomen en bewaard als `songs.json.migrated`. Windows: beide programma's staan in dezelfde map met een eigen snelkoppeling; macOS: beide apps staan in de schijfkopie, zet ze naast elkaar in Programma's
 - **Eigen pagina voor liederen** (Liederen): de lijst links, het bewerken rechts: titel, liednummer, auteur, CCLI-nummer, bundel, tags, de tekst met knoppen om een couplet, refrein of brug toe te voegen, de volgorde van de delen en een voorbeeld van de slides in die volgorde. Bij het wisselen van lied vraagt het programma wat er met niet-opgeslagen wijzigingen moet. Het onderste paneel op de dienstpagina blijft de snelle weg om een lied aan de dienst toe te voegen; het potlood daar opent de pagina
 - **Bundel en tags**: elk lied heeft een bundel (bijvoorbeeld Opwekking, Hillsong of Liedboek) en kan meerdere tags hebben (Kerst, Pasen, …). In de lijst filter je op bundel en op tag, en de zoekopdracht vindt ze ook; hoofdletters maken niet uit (Kerst en kerst zijn dezelfde tag)
 - **Volgorde van de delen**: een lied heeft een standaardvolgorde (bijvoorbeeld Couplet 1, Refrein, Couplet 2, Refrein), zodat je het refrein maar één keer hoeft te typen. In de dienst kun je voor dat onderdeel een eigen volgorde kiezen zonder het lied zelf te veranderen; 'Standaard' zet de standaardvolgorde terug
@@ -30,7 +31,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - Laadscherm bij het opstarten (het programma start soms een paar seconden); de duur van elke opstartfase staat in het logbestand (Instellingen → Problemen oplossen)
 - Het kruisje van het venster vraagt eerst of je het programma echt wilt afsluiten (Enter bevestigt, Escape annuleert); de vraag noemt een open uitvoer en niet-opgeslagen wijzigingen in een lied
 - Het programma kan maar één keer tegelijk draaien: nog een keer starten haalt het open venster naar voren
-- Automatisch opslaan van dienst en liederen
+- Automatisch opslaan van dienst en liederen (de liederen in de database, de dienst in `service.json`)
 
 ## Logo en iconen
 `assets/branding/` bevat de aangeleverde bestanden (logo, programma-icoon, documenticoon; PNG en ICO). Het programma-icoon wordt gebruikt voor het venster, `beaconview.exe` en de installer (Windows) en de app (macOS, `.icns`). Het documenticoon is nog niet in gebruik: het is bedoeld voor een eigen bestandstype voor diensten.
@@ -43,7 +44,7 @@ Bij elke release (tag `v*`) bouwt de CI:
 De pakketten zijn nog niet ondertekend: Windows (SmartScreen) en macOS (Gatekeeper) tonen daarom een waarschuwing bij het eerste openen.
 
 ## Bouwen
-Vereist Qt 6.4+ (Quick, QuickControls2, Multimedia, Svg, Pdf), CMake 3.21+ en een C++17-compiler. Op Linux heb je voor de bestandsdialogen ook `qml6-module-qt-labs-folderlistmodel` nodig, en voor PowerPoint-import LibreOffice.
+Vereist Qt 6.4+ (Quick, QuickControls2, Multimedia, Svg, Pdf, Sql met het SQLite-stuurprogramma, Network), CMake 3.21+ en een C++17-compiler. Op Linux heb je voor de bestandsdialogen ook `qml6-module-qt-labs-folderlistmodel` nodig, voor de liederen-database `libqt6sql6-sqlite`, en voor PowerPoint-import LibreOffice.
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
