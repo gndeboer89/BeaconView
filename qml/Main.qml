@@ -17,7 +17,13 @@ ApplicationWindow {
         mid: T.border; dark: T.border; light: T.cardHover; placeholderText: T.muted; toolTipBase: T.card; toolTipText: T.text
     }
     property int page: 0
-    onClosing: Qt.quit()
+    // The cross of the window asks first: closing by accident in the middle of a service is expensive.
+    property bool quitConfirmed: false
+    onClosing: function (close) {
+        if (quitConfirmed) { Qt.quit(); return }
+        close.accepted = false
+        quitDialog.open()
+    }
 
     VideoEngine { id: videoEngine }
     ImportDialog {}
@@ -35,6 +41,32 @@ ApplicationWindow {
     Shortcut { sequence: "B"; enabled: !win.typing; onActivated: presenter.blackout = !presenter.blackout }
     Shortcut { sequence: "L"; enabled: !win.typing; onActivated: presenter.logo = !presenter.logo }
     Shortcut { sequence: "T"; enabled: !win.typing; onActivated: presenter.textHidden = !presenter.textHidden }
+
+    Dialog {
+        id: quitDialog
+        modal: true
+        x: Math.round((win.width - width) / 2); y: Math.round((win.height - height) / 2)
+        width: 460; padding: 20
+        background: Rectangle { color: T.panel; radius: 12; border.color: T.border }
+        onOpened: quitButton.forceActiveFocus()          // Enter confirms, Escape cancels
+        contentItem: ColumnLayout {
+            spacing: 12
+            Text { text: "BeaconView afsluiten?"; color: T.text; font.pixelSize: 20; font.bold: true }
+            Text {
+                Layout.fillWidth: true; wrapMode: Text.WordWrap; color: T.muted; font.pixelSize: 14
+                text: (presenter.outputOn ? "De uitvoer staat nog open en wordt gesloten. " : "")
+                    + (songsPage.changed ? "Er zijn wijzigingen in een lied die nog niet zijn opgeslagen; die gaan verloren. " : "")
+                    + "Weet je zeker dat je het programma wilt afsluiten?"
+            }
+            RowLayout {
+                Layout.alignment: Qt.AlignRight; spacing: 8
+                AppButton { text: "Annuleren"; onClicked: quitDialog.close() }
+                AppButton { id: quitButton; text: "Afsluiten"; primary: true
+                    Keys.onReturnPressed: clicked(); Keys.onEnterPressed: clicked()
+                    onClicked: { win.quitConfirmed = true; win.close() } }
+            }
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent; anchors.margins: 12; spacing: 12

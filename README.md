@@ -28,6 +28,7 @@ Gebouwd met **Qt 6 (C++ / QML)**, één codebase voor Windows, macOS en Linux.
 - **Bijbel** (Statenvertaling): typ een verwijzing (`Joh 3:16`, `1 Kor 13:4-7`, `Psalm 23`) of zoek op een woord; kies het aantal verzen per slide en de verwijzing staat onderaan elke slide
 - **Update-melding**: de app kijkt op GitHub of er een nieuwere versie is (hooguit twee keer per dag, op de achtergrond en nooit terwijl de uitvoer open staat) en meldt dat bovenin met een knop om te downloaden en een knop om die versie over te slaan; in Instellingen kun je het uitzetten of nu controleren. Er wordt niets zelf gedownload of geïnstalleerd. Alleen de naam en het versienummer van het programma gaan mee in de aanvraag. Zolang alle releases het label 'prerelease' hebben tellen ze allemaal; zodra er een gewone release is, tellen alleen gewone releases, zodat prereleases voor testen gebruikt kunnen worden
 - Laadscherm bij het opstarten (het programma start soms een paar seconden); de duur van elke opstartfase staat in het logbestand (Instellingen → Problemen oplossen)
+- Het kruisje van het venster vraagt eerst of je het programma echt wilt afsluiten (Enter bevestigt, Escape annuleert); de vraag noemt een open uitvoer en niet-opgeslagen wijzigingen in een lied
 - Het programma kan maar één keer tegelijk draaien: nog een keer starten haalt het open venster naar voren
 - Automatisch opslaan van dienst en liederen
 
